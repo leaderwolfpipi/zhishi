@@ -1,0 +1,43 @@
+package entity
+
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+	"github.com/leaderwolfpipi/zhishi/helper"
+	"github.com/shopspring/decimal"
+)
+
+// 关注表
+type Follow struct {
+	// 主键
+	ID uint64 `gorm:"type:bigint(20);primary_key;column:follow_id;" json:"follow_id" param:"follow_id" validate:"required"`
+	// 评论人id
+	UserId uint64 `gorm:"type:bigint(20);column:user_id;" json:"user_id" param:"user_id"`
+	// 被关注人id
+	FollowedId uint64 `gorm:"type:bigint(20);column:followed_id;" json:"followed_id" param:"followed_id"`
+	// 创建时间
+	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"create_time" form:"create_time"`
+}
+
+// 设置表名
+func (follow *Follow) TableName() string {
+	return "zs_follow"
+}
+
+// 设置创建钩子
+// 插入前生成主键并自动设置插入时间
+func (follow *Follow) BeforeCreate(scope *gorm.Scope) error {
+	nodeId := (int64)helper.GetNodesConfig()[0].NodeId
+	id, err := helper.GenerateIdBySnowflake(nodeId)
+	if err != nil {
+		panic("生成ID时发生异常: %s", err)
+	}
+	scope.Set("ID", &id)
+	follow.ID = id
+
+	// 设置create_time（单位秒）
+	scope.SetColumn("CreateTime", time.Now().Unix())
+
+	return nil
+}
