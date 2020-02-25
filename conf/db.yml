@@ -9,5 +9,5 @@ mysql:
     max_idle_conns: 10
     # 表名不可为复数形式
     singular: true
-	
+
 # oracle连接配置
