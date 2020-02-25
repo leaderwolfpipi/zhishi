@@ -1,34 +1,41 @@
 package helper
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/spf13/viper"
 )
 
 var Database *gorm.DB
 
 // 初始化连接
 func init() {
-	mysql := GetMysqlConfig()
+	// 载入配置
+	err := LoadConfig()
 
-	fmt.Println(mysql)
-
-	fmt.Println("driver", mysql.DB.Driver)
-	fmt.Println("Username", mysql.DB.Username)
-	fmt.Println("Password", mysql.DB.Password)
-	fmt.Println("Url", mysql.DB.Url)
-
-	Database, err := gorm.Open(mysql.DB.Driver, mysql.DB.Username+":"+mysql.DB.Password+mysql.DB.Url)
+	// 判断错误
 	if err != nil {
-		// ErrLogger.Error("db connect error: " + err.Error())
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// 未找到配置文件
+			WorkLogger.Info("no such config file!")
+		} else {
+			// 其他类型错误
+			ErrLogger.Fatal("read config error: " + err.Error())
+		}
+	}
+
+	// 实例化db
+	mysql := GetMysqlConfig()
+	Database, err := gorm.Open(mysql.Mysql.Driver, mysql.Mysql.Username+":"+mysql.Mysql.Password+mysql.Mysql.Url)
+	if err != nil {
+		ErrLogger.Error("db connect error: " + err.Error())
 		os.Exit(0)
 	}
-	Database.DB().SetMaxOpenConns(mysql.DB.MaxOpenConns)
-	Database.DB().SetMaxIdleConns(mysql.DB.MaxIdleConns)
+	Database.DB().SetMaxOpenConns(mysql.Mysql.MaxOpenConns)
+	Database.DB().SetMaxIdleConns(mysql.Mysql.MaxIdleConns)
 	Database.SetLogger(SQLLogger)
 	// Database.LogMode(mysql.DB.ShowSql)
-	Database.SingularTable(mysql.DB.Singular)
+	Database.SingularTable(mysql.Mysql.Singular)
 }

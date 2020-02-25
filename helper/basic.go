@@ -24,7 +24,7 @@ type JsonResult struct {
 }
 
 // 数据库配置结构
-type DbConfig struct {
+type MysqlConfig struct {
 	Driver       string `json:"driver"`       // 数据库类型；eg: mysql
 	Url          string `json:"url"`          // 连接url
 	Username     string `json:"username"`     // 用户名
@@ -35,8 +35,8 @@ type DbConfig struct {
 }
 
 // mysql配置
-type Mysql struct {
-	DB DbConfig
+type DB struct {
+	Mysql MysqlConfig
 }
 
 // jwt配置结构
@@ -70,9 +70,9 @@ type Nodes struct {
 type EntityFunc func() interface{}
 
 // 获取mysql配置信息
-func GetMysqlConfig() *Mysql {
-	mysql := Mysql{}
-	return GetConfig(&mysql).(*Mysql)
+func GetMysqlConfig() *DB {
+	mysql := DB{}
+	return GetConfig(&mysql).(*DB)
 }
 
 // 获取jwt-token配置信息

@@ -6,7 +6,6 @@ import (
 	"github.com/leaderwolfpipi/doris/middleware"
 	"github.com/leaderwolfpipi/zhishi/helper"
 	"github.com/leaderwolfpipi/zhishi/router"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -23,17 +22,6 @@ func main() {
 	d.Use(middleware.Logger())
 	d.Use(middleware.Recovery())
 
-	// 加载配置文件
-	var err error = nil
-	err = helper.LoadConfig()
-	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		// 未找到配置文件
-		d.Logger.Info("no such config file!")
-	} else {
-		// 其他类型错误
-		d.Logger.Fatal("read config error: " + err.Error())
-	}
-
 	// 设置token秘钥
 	helper.SetSignKey(helper.GetTokenConfig().T.SignKey)
 
@@ -42,5 +30,5 @@ func main() {
 	router.RegisterNoAuthRoutes(d)
 
 	// 启动服务
-	d.Run("::9527")
+	d.Run("localhost:9527")
 }

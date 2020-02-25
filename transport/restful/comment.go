@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 
-	// "github.com/jinzhu/gorm"
 	"github.com/leaderwolfpipi/doris"
 	"github.com/leaderwolfpipi/zhishi/entity"
 	"github.com/leaderwolfpipi/zhishi/helper"

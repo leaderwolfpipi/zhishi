@@ -3,8 +3,6 @@ package helper
 // 提供公共的函数定义
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/snowflake"
 	"github.com/spf13/viper"
 )
@@ -26,23 +24,25 @@ func LoadConfig() error {
 	// 初始化错误
 	var err error = nil
 
+	// 实例化viper
+	config := viper.New()
+
 	// 设置配置目录
-	viper.AddConfigPath("./conf")
-	viper.AddConfigPath("/Users/jonah/github_code/zhishi/conf")
+	config.AddConfigPath("./conf")
+	config.AddConfigPath("/Users/jonah/github_code/zhishi/conf/")
 
 	// 加载文件名
-	configNameArr := []string{"db", "jwt", "node", "mongodb", "es", "redis"}
+	configNameArr := []string{"mongodb", "es", "redis", "db", "jwt", "node"}
 	for _, configItem := range configNameArr {
-		viper.SetConfigName(configItem)
+		config.SetConfigName(configItem)
+		config.SetConfigType("yml")     // 设置配置类型
+		config.MergeInConfig()          // 合并配置
+		err = config.ReadInConfig()     // 加载配置到内存
+		configs := config.AllSettings() // 获取当前文件配置
+		for k, v := range configs {     // 全部写入默认值
+			viper.SetDefault(k, v)
+		}
 	}
-
-	// 设置配置后缀
-	viper.SetConfigType("yml")
-
-	// 加载配置到内存
-	err = viper.ReadInConfig()
-
-	fmt.Println("1111========")
 
 	return err
 }
@@ -50,9 +50,6 @@ func LoadConfig() error {
 // 解析配置项到数据结构
 func GetConfig(config interface{}) interface{} {
 	viper.Unmarshal(config)
-
-	// debug
-	fmt.Println(config)
 	return config
 }
 

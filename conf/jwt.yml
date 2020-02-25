@@ -1,12 +1,12 @@
 # jwt-token配置
 token:
     # token生成秘钥
-    sign_key: 82040620FEFAC4511FC65000ADAB0F77
+    sign_key: '82040620FEFAC4511FC65000ADAB0F77'
     # 签名生效时间单位秒（配置负数表示立即生效，正数表示延迟生效)
-    active_time: -10s
+    active_time: '-10s'
     # token有效期单位天（只能为正数）
-    expired_time: 3d
-	# 刷新token有效时间
-	refresh_expired_time: 1m
+    expired_time: '3d'
+    # 刷新token有效时间
+    refresh_expired_time: '1m'
     # 发行人
-    issuer: bsit
+    issuer: 'bsit'

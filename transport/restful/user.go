@@ -2,6 +2,7 @@ package restful
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,18 +26,39 @@ func Login(c *doris.Context) error {
 	user := &entity.User{}
 	result := helper.JsonResult{Code: 200, Message: "success", Result: nil}
 
+	// debug
+	fmt.Println("测试1....")
+
 	// 参数绑定
 	_ = c.Form(user)
+
+	fmt.Println("测试2....")
+
+	fmt.Println(user.GetUserFunc("findOne"))
 
 	// 实例化repo对象
 	repo := mysql.NewRepo(user.GetUserFunc("findOne"), helper.Database)
 
+	fmt.Println("测试2.5....")
+
 	// 传递repo到service层
 	service := service.NewService(repo)
 
+	fmt.Println("测试2.8....")
+
+	fmt.Println(user.Username)
+
+	fmt.Println("测试2.9....")
+
 	// 调用service服务获取用户信息
 	tmp, err := service.UserByUsername(user.Username)
+
+	fmt.Println("测试3....")
+
 	userInfo := tmp.(*entity.User)
+
+	fmt.Println("测试4....")
+
 	if err != nil || userInfo.Password != helper.SHA256(user.Password) {
 		// 加入错误
 		errs = append(errs, err)
@@ -56,6 +78,8 @@ func Login(c *doris.Context) error {
 			errs = append(errs, err)
 		}
 	}
+
+	fmt.Println("测试5....")
 
 	return getErrs(errs)
 }
