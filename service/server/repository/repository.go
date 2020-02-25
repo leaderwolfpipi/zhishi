@@ -4,7 +4,7 @@
 package repository
 
 import (
-	"helper"
+	"github.com/leaderwolfpipi/zhishi/helper"
 )
 
 // 公共SQL仓库接口
@@ -16,7 +16,9 @@ type DbRepo interface {
 	Update(item interface{}) error
 
 	// 删除
-	Delete(where map[string]interface{}) error
+	Delete(
+		where map[string]interface{},
+		orWhere map[string]interface{}) error
 
 	// 根据主键删除
 	DeleteByPK(pk string, value int64) error
@@ -49,7 +51,7 @@ type DbRepo interface {
 		order map[string]string,
 		page int,
 		pageSize int) *helper.PageResult
-	
+
 	// 事务操作
 	Transaction(map[string]interface{}) error
 }
@@ -73,12 +75,12 @@ type CacheRepo interface {
 type DocRepo interface {
 	// 插入文档
 	Insert(item interface{}) error
-	
+
 	// 删除文档
 	Delete(id string) error
-	
+
 	// 查询文档
-	Find(where map[string]interface{})(interface,error)
+	Find(where map[string]interface{}) (interface{}, error)
 }
 
 // @TODO...

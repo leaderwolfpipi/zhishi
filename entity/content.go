@@ -1,11 +1,12 @@
 package entity
 
 import (
-	"time"
+	// "time"
+	"strconv"
 
 	"github.com/jinzhu/gorm"
 	"github.com/leaderwolfpipi/zhishi/helper"
-	"github.com/shopspring/decimal"
+	//"github.com/shopspring/decimal"
 )
 
 // 文章内容表
@@ -26,16 +27,29 @@ func (articleContent *ArticleContent) TableName() string {
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
 func (content *ArticleContent) BeforeCreate(scope *gorm.Scope) error {
-	nodeId := (int64)helper.GetNodesConfig()[0].NodeId
-	id, err := helper.GenerateIdBySnowflake(nodeId)
+	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().N[0].NodeId)
+	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
-		panic("生成ID时发生异常: %s", err)
+		panic("生成ID时发生异常: %s" + err.Error())
 	}
 	scope.Set("ID", &id)
 	content.ID = id
-	
+
 	// 查询主表id并赋值
-	
 
 	return nil
+}
+
+// 获取实体处理函数
+func (ac *ArticleContent) GetContentFunc(action string) helper.EntityFunc {
+	return func() interface{} {
+		var ret interface{}
+		if action == "delete" || action == "add" || action == "update" {
+			ret = &ArticleContent{}
+		} else if action == "findOne" || action == "findMore" {
+			ret = make([]ArticleContent, 0)
+		}
+
+		return ret
+	}
 }

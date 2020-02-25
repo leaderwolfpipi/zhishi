@@ -4,7 +4,8 @@ package helper
 
 import (
 	"errors"
-	"helper"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -12,7 +13,7 @@ import (
 
 // 载荷添加部分系统需要的信息
 type CustomClaims struct {
-	UID       string `json:"user_id"`
+	UID       uint64 `json:"user_id"`
 	Username  string `json:"username"`
 	Telephone string `json:"telephone"`
 	jwt.StandardClaims
@@ -49,7 +50,7 @@ func SetSignKey(key string) string {
 }
 
 // token签发
-func (j *JWT) CreateToken(claims CustomClaims) (string, error) {
+func (j *JWT) CreateToken(claims CustomClaims) (string, string, error) {
 	// 初始化错误
 	var tmpErr error = nil
 
@@ -57,10 +58,10 @@ func (j *JWT) CreateToken(claims CustomClaims) (string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// 设置refreshToken过期时间为一月
 	expired := strings.TrimRight(GetTokenConfig().T.ExpiredTime, "dD ")
-	expiredInt := strconv.Atoi(expired)
-	claims.ExpiresAt = int64(time.Now().Unix() + expiredInt*24*3600)
+	expiredInt, _ := strconv.Atoi(expired)
+	claims.ExpiresAt = time.Now().Unix() + int64(expiredInt*24*3600)
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	accessTokenRet, err := token.SignedString(j.SignKey)
+	accessTokenRet, err := accessToken.SignedString(j.SignKey)
 	refreshTokenRet, errRefresh := refreshToken.SignedString(j.SignKey)
 
 	// tmpErr代表出错的那一个
@@ -101,7 +102,7 @@ func (j *JWT) ResolveToken(tokenString string) (*CustomClaims, error) {
 
 // token刷新
 // 注意：使用refreshToken来换取新的accessToken
-func (j *JWT) RefreshToken(tokenString string) (string, error) {
+func (j *JWT) RefreshToken(tokenString string) (string, string, error) {
 	jwt.TimeFunc = func() time.Time {
 		return time.Unix(0, 0)
 	}
@@ -109,12 +110,12 @@ func (j *JWT) RefreshToken(tokenString string) (string, error) {
 		return j.SignKey, nil
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		jwt.TimeFunc = time.Now
 		claims.StandardClaims.ExpiresAt = time.Now().Add(1 * time.Hour).Unix()
 		return j.CreateToken(*claims)
 	}
-	return "", TokenInvalid
+	return "", "", TokenInvalid
 }

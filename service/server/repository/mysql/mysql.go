@@ -1,26 +1,26 @@
 package mysql
 
 import (
-	"helper"
 	"strings"
 
 	"github.com/jinzhu/gorm"
+	"github.com/leaderwolfpipi/zhishi/helper"
 )
 
 // mysql repo implement DbRepo
 type repo struct {
 	// 实体对象
 	// 由service层传入
-	entity interface{}
+	entity helper.EntityFunc
 
 	// 数据库实例
 	db *gorm.DB
 }
 
-var r repo = &repo{}
+var r *repo = &repo{}
 
 // 实例化mysql repo
-func NewRepo(entity interface{}, db *gorm.DB) *repo {
+func NewRepo(entity helper.EntityFunc, db *gorm.DB) *repo {
 	r.entity = entity
 	r.db = db
 	return r
@@ -90,18 +90,28 @@ func (r *repo) Update(item interface{}) error {
 func (r *repo) Delete(
 	andWhere map[string]interface{},
 	orWhere map[string]interface{}) error {
-	// 设置删除条件
+	// 设置and删除条件
 	for k, v := range andWhere {
 		r.db = r.db.Where(k, v)
 	}
-	err := r.db.Delete(r.entity).Error
+
+	// 设置or删除条件
+	for k, v := range orWhere {
+		r.db = r.db.Or(k, v)
+	}
+
+	// 调用获取实体的方法
+	entity := r.entity()
+	err := r.db.Delete(entity).Error
+
 	return err
 }
 
 // 根据主键删除
 func (r *repo) DeleteByPK(pk string, value int64) error {
 	key := pk + " = ?"
-	err := r.db.Where(key, value).Delete(r.entity).Error
+	entity := r.entity()
+	err := r.db.Where(key, value).Delete(entity).Error
 	return err
 }
 
@@ -125,15 +135,16 @@ func (r *repo) FindByPK(
 	}
 
 	// 设置where查询条件
+	row := r.entity()
 	key := pk + " = ?"
-	err := r.db.Where(key, value).First(r.entity).Error
+	err := r.db.Where(key, value).First(row).Error
 
 	if err != nil {
 		// 查询出错
 		return nil, err
 	}
 
-	return r.entity, nil
+	return row, nil
 }
 
 // 查找一条
@@ -172,13 +183,14 @@ func (r *repo) FindOne(
 	}
 
 	// 查询单条记录
-	err := r.db.First(r.entity).Error
+	row := r.entity()
+	err := r.db.First(row).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return r.entity, nil
+	return row, nil
 }
 
 // 查找全部
@@ -190,7 +202,7 @@ func (r *repo) Find(
 	orWhere map[string]interface{},
 	order map[string]string) (interface{}, error) {
 	// 存储变量
-	rows := make([]repo.entity, 0)
+	rows := r.entity()
 	count := 0
 
 	// 联表查询
@@ -223,7 +235,7 @@ func (r *repo) Find(
 	}
 
 	// 返回满足条件的全部记录
-	err := r.db.find(&rows).Count(&count).Error
+	err := r.db.Find(rows).Count(&count).Error
 
 	if err != nil {
 		return nil, err
@@ -240,7 +252,7 @@ func (r *repo) FindPage(joinTable map[string]string,
 	pageNum int,
 	pageSize int) *helper.PageResult {
 	// 存储变量
-	rows := make([]repo.entity, 0)
+	rows := r.entity()
 	count := 0
 
 	// 联表查询
@@ -278,9 +290,9 @@ func (r *repo) FindPage(joinTable map[string]string,
 	}
 
 	// 执行查询
-	r.db.find(&rows).Count(&count)
+	r.db.Find(&rows).Count(&count)
 
-	pageData := &PageResult{PageNum: pageNum, PageSize: pageSize, Total: count, Rows: rows}
+	pageData := &helper.PageResult{PageNum: pageNum, PageSize: pageSize, Total: count, Rows: rows}
 	return pageData
 
 }

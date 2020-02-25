@@ -1,8 +1,22 @@
 package restful
 
+import (
+	"net/http"
+
+	// "github.com/jinzhu/gorm"
+	"github.com/leaderwolfpipi/doris"
+	"github.com/leaderwolfpipi/zhishi/entity"
+	"github.com/leaderwolfpipi/zhishi/helper"
+	"github.com/leaderwolfpipi/zhishi/service"
+	"github.com/leaderwolfpipi/zhishi/service/server/repository/mysql"
+)
+
 // 关注相关接口
 // 关注作者
-func Follow() {
+func Follow(c *doris.Context) error {
+	// 初始化错误
+	var err error = nil
+
 	// 初始化结果
 	jsonResult := helper.JsonResult{
 		Code:    helper.FollowOk,
@@ -10,15 +24,15 @@ func Follow() {
 	}
 
 	// 绑定参数
-	follow := entity.Follow{}
-	_ = c.Form(&follow)
+	follow := &entity.Follow{}
+	_ = c.Form(follow)
 
 	// 实例化service
-	repo := mysql.NewRepo(&entity.Follow{}, helper.Database)
+	repo := mysql.NewRepo(follow.GetFollowFunc("add"), helper.Database)
 	service := service.NewService(repo)
 
 	// 执行插入
-	err := service.AuthorFollow(&follow)
+	err = service.AuthorFollow(follow)
 
 	// 结果判断
 	if err != nil {
@@ -29,10 +43,14 @@ func Follow() {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 取消关注
-func Unfollow() {
+func Unfollow(c *doris.Context) error {
+	// 初始化错误
+	var err error = nil
+
 	// 初始化结果
 	jsonResult := helper.JsonResult{
 		Code:    helper.UnFollowOk,
@@ -40,15 +58,19 @@ func Unfollow() {
 	}
 
 	// 绑定参数
-	follow := entity.Follow{}
-	_ = c.Form(&follow)
+	follow := &entity.Follow{}
+	_ = c.Form(follow)
+	andWhere := map[string]interface{}{
+		"user_id":     follow.UserId,
+		"followed_id": follow.FollowedId,
+	}
 
 	// 实例化service
-	repo := mysql.NewRepo(&entity.Follow{}, helper.Database)
+	repo := mysql.NewRepo(follow.GetFollowFunc("delete"), helper.Database)
 	service := service.NewService(repo)
 
 	// 执行插入
-	err := service.AuthorUnFollow(&follow)
+	err = service.AuthorUnFollow(andWhere)
 
 	// 结果判断
 	if err != nil {
@@ -59,4 +81,5 @@ func Unfollow() {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }

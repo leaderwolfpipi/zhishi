@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -48,10 +49,10 @@ func (article *Article) TableName() string {
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
 func (article *Article) BeforeCreate(scope *gorm.Scope) error {
-	nodeId := (int64)helper.GetNodesConfig()[0].NodeId
-	id, err := helper.GenerateIdBySnowflake(nodeId)
+	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().N[0].NodeId)
+	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
-		panic("生成ID时发生异常: %s", err)
+		panic("生成ID时发生异常: %s" + err.Error())
 	}
 	scope.Set("ID", &id)
 	article.ID = id
@@ -64,8 +65,22 @@ func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 
 // 设置更新钩子
 // 更新操作时自动更新last_update_time（单位秒）
-func (user *Article) BeforeUpdate(scope *gorm.Scope) error {
+func (article *Article) BeforeUpdate(scope *gorm.Scope) error {
 	// 设置更新时间
 	scope.SetColumn("LastUpdateTime", time.Now().Unix())
 	return nil
+}
+
+// 获取实体处理函数
+func (article *Article) GetArticleFunc(action string) helper.EntityFunc {
+	return func() interface{} {
+		var ret interface{}
+		if action == "delete" || action == "add" || action == "update" {
+			ret = &Article{}
+		} else if action == "findOne" || action == "findMore" {
+			ret = make([]Article, 0)
+		}
+
+		return ret
+	}
 }

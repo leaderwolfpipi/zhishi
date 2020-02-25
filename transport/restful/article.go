@@ -4,16 +4,16 @@ package restful
 import (
 	"net/http"
 
-	"github.com/jinzhu/gorm"
+	// "github.com/jinzhu/gorm"
 	"github.com/leaderwolfpipi/doris"
-	"github.com/leaderwolfpipi/entity"
-	"github.com/leaderwolfpipi/helper"
-	"github.com/leaderwolfpipi/service"
-	"github.com/leaderwolfpipi/service/server/repository/mysql"
+	"github.com/leaderwolfpipi/zhishi/entity"
+	"github.com/leaderwolfpipi/zhishi/helper"
+	"github.com/leaderwolfpipi/zhishi/service"
+	"github.com/leaderwolfpipi/zhishi/service/server/repository/mysql"
 )
 
 // 获取文章
-func Article(c *doris.Context) {
+func Article(c *doris.Context) error {
 	// 初始化错误
 	var err error = nil
 
@@ -24,16 +24,17 @@ func Article(c *doris.Context) {
 	}
 
 	// 提取atticle_id
-	article_id := c.Param["articleId"]
+	article_id := c.Param("articleId").(int64)
+	article := &entity.Article{}
 
 	// 实例化repo对象
-	repo := mysql.NewRepo(entity.Article, helper.Database)
+	repo := mysql.NewRepo(article.GetArticleFunc("findOne"), helper.Database)
 
 	// 传递repo到service层
 	service := service.NewService(repo)
 
 	// 调用service的ArticleByPK接口
-	result, err := service.ArticleByPK(nil, "article_id", article_id, "Content")
+	result, err := service.ArticleByPK("article_id", article_id, "Content")
 	if err != nil {
 		// 异常状态码返回400
 		jsonResult.Code = helper.ArticleGetErr
@@ -44,11 +45,11 @@ func Article(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
-	return
+	return err
 }
 
 // 文章添加
-func ArticleAdd(c *doris.Context) {
+func ArticleAdd(c *doris.Context) error {
 	// 初始化错误
 	var err error = nil
 
@@ -63,20 +64,21 @@ func ArticleAdd(c *doris.Context) {
 	_ = c.Form(&content)
 
 	// 绑定文章表
-	article := entity.Article{}
-	_ = c.Form(&article)
+	article := &entity.Article{}
+	_ = c.Form(article)
 
 	// 将内容组合进文章
 	article.ArticleContent = content
 
 	// 实例化repo对象
-	repo := mysql.NewRepo(entity.Article, helper.Database)
+	repo := mysql.NewRepo(article.GetArticleFunc("add"), helper.Database)
 
 	// 传递repo到service层
 	service := service.NewService(repo)
 
 	// 调用service的ArticleByPK接口
-	err = service.ArticleAdd(&article)
+	err = service.ArticleAdd(article)
+
 	if err != nil {
 		// 异常状态码返回400
 		jsonResult.Code = helper.ArticleAddErr
@@ -85,10 +87,11 @@ func ArticleAdd(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 文章编辑
-func ArticleModify(c *doris.Context) {
+func ArticleModify(c *doris.Context) error {
 	// 初始化错误
 	var err error = nil
 
@@ -98,23 +101,23 @@ func ArticleModify(c *doris.Context) {
 		Message: helper.StatusText(helper.ArticleOk),
 	}
 
-	// 实例化repo对象
-	repo := mysql.NewRepo(entity.Article, helper.Database)
-
-	// 传递repo到service层
-	service := service.NewService(repo)
-
 	// 实例化内容表
 	content := entity.ArticleContent{}
 	_ = c.Form(&content)
 
 	// 实例化文章表
-	article := entity.Article{}
-	_ = c.Form(&article)
+	article := &entity.Article{}
+	_ = c.Form(article)
 	article.ArticleContent = content
 
+	// 实例化repo对象
+	repo := mysql.NewRepo(article.GetArticleFunc("update"), helper.Database)
+
+	// 传递repo到service层
+	service := service.NewService(repo)
+
 	// 调用service的ArticleSave接口
-	err = service.ArticleModify(&article)
+	err = service.ArticleModify(article)
 	if err != nil {
 		// 异常状态码返回400
 		jsonResult.Code = helper.ArticleModifyErr
@@ -123,10 +126,11 @@ func ArticleModify(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 文章删除
-func ArticleDel(c *doris.Context) {
+func ArticleDel(c *doris.Context) error {
 	// 初始化错误
 	var err error = nil
 
@@ -136,14 +140,12 @@ func ArticleDel(c *doris.Context) {
 		Message: helper.StatusText(helper.ArticleOk),
 	}
 
-	// 实例化repo对象
-	repo := mysql.NewRepo(entity.Article, helper.Database)
-
 	// 获取参数
-	articleId := int64(c.Param["articleId"])
+	articleId := c.Param("articleId").(int64)
+	article := &entity.Article{}
 
 	// 实例化repo对象
-	repo := mysql.NewRepo(entity.Article, helper.Database)
+	repo := mysql.NewRepo(article.GetArticleFunc("delete"), helper.Database)
 
 	// 传递repo到service层
 	service := service.NewService(repo)
@@ -158,10 +160,14 @@ func ArticleDel(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 文章点赞
-func ArticleLike(c *doris.Context) {
+func ArticleLike(c *doris.Context) error {
+	// 初始化错误
+	var err error = nil
+
 	// 初始化结果
 	jsonResult := helper.JsonResult{
 		Code:    helper.ArticleLikeOk,
@@ -169,15 +175,15 @@ func ArticleLike(c *doris.Context) {
 	}
 
 	// 绑定参数
-	like := entity.Like{}
-	_ = c.Form(&like)
+	like := &entity.Like{}
+	_ = c.Form(like)
 
 	// 实例化service
-	repo := mysql.NewRepo(entity.Article, helper.Database)
+	repo := mysql.NewRepo(like.GetLikeFunc("add"), helper.Database)
 	service := service.NewService(repo)
 
 	// 执行插入
-	err := service.ArticleLike(&like)
+	err = service.ArticleLike(like)
 
 	// 结果判断
 	if err != nil {
@@ -188,10 +194,11 @@ func ArticleLike(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 取消点赞
-func ArticleUnlike(c *doris.Context) {
+func ArticleUnlike(c *doris.Context) error {
 	// 初始化结果
 	jsonResult := helper.JsonResult{
 		Code:    helper.ArticleUnLikeOk,
@@ -199,15 +206,19 @@ func ArticleUnlike(c *doris.Context) {
 	}
 
 	// 绑定参数
-	like := entity.Like{}
-	_ = c.Form(&like)
+	like := &entity.Like{}
+	_ = c.Form(like)
+	andWhere := map[string]interface{}{
+		"user_id":   like.UserId,
+		"object_id": like.ObjectId,
+	}
 
 	// 实例化service
-	repo := mysql.NewRepo(entity.Article, helper.Database)
+	repo := mysql.NewRepo(like.GetLikeFunc("delete"), helper.Database)
 	service := service.NewService(repo)
 
 	// 执行插入
-	err := service.ArticleUnLike(&like)
+	err := service.ArticleUnlike(andWhere)
 
 	// 结果判断
 	if err != nil {
@@ -218,10 +229,14 @@ func ArticleUnlike(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 收藏文章
-func ArticleStar(c *doris.Context) {
+func ArticleStar(c *doris.Context) error {
+	// 初始化错误
+	var err error = nil
+
 	// 初始化结果
 	jsonResult := helper.JsonResult{
 		Code:    helper.ArticleStarOk,
@@ -229,15 +244,15 @@ func ArticleStar(c *doris.Context) {
 	}
 
 	// 绑定参数
-	star := entity.Star{}
-	_ = c.Form(&star)
+	star := &entity.Star{}
+	_ = c.Form(star)
 
 	// 实例化service
-	repo := mysql.NewRepo(entity.Star, helper.Database)
+	repo := mysql.NewRepo(star.GetStarFunc("add"), helper.Database)
 	service := service.NewService(repo)
 
 	// 执行插入
-	err := service.ArticleStar(&star)
+	err = service.ArticleStar(star)
 
 	// 结果判断
 	if err != nil {
@@ -248,10 +263,14 @@ func ArticleStar(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }
 
 // 取消收藏文章
-func ArticleUnStar(c *doris.Context) {
+func ArticleUnStar(c *doris.Context) error {
+	// 初始化错误
+	var err error = nil
+
 	// 初始化结果
 	jsonResult := helper.JsonResult{
 		Code:    helper.ArticleUnStarOk,
@@ -259,15 +278,19 @@ func ArticleUnStar(c *doris.Context) {
 	}
 
 	// 绑定参数
-	star := entity.Star{}
-	_ = c.Form(&star)
+	star := &entity.Star{}
+	_ = c.Form(star)
+	andWhere := map[string]interface{}{
+		"user_id":    star.UserId,
+		"article_id": star.ArticleId,
+	}
 
 	// 实例化service
-	repo := mysql.NewRepo(entity.Star, helper.Database)
+	repo := mysql.NewRepo(star.GetStarFunc("delete"), helper.Database)
 	service := service.NewService(repo)
 
 	// 执行插入
-	err := service.ArticleUnStar(&star)
+	err = service.ArticleUnStar(andWhere)
 
 	// 结果判断
 	if err != nil {
@@ -278,4 +301,5 @@ func ArticleUnStar(c *doris.Context) {
 
 	// 返回结果
 	c.IndentedJson(http.StatusOK, jsonResult)
+	return err
 }

@@ -2,7 +2,9 @@ package router
 
 import (
 	"github.com/leaderwolfpipi/doris"
-	"github.com/leaderwolfpipi/transport/restful"
+	"github.com/leaderwolfpipi/doris/middleware"
+	"github.com/leaderwolfpipi/zhishi/helper"
+	"github.com/leaderwolfpipi/zhishi/transport/restful"
 )
 
 // Register Routers
@@ -12,7 +14,7 @@ func RegisterAuthRoutes(d *doris.Doris) {
 	api := d.Group("/api/v1")
 
 	// JWT验证
-	api.Use(middleware.JWT())
+	api.Use(middleware.JWT(helper.GetSignKey()))
 
 	// 添加文章
 	api.POST("/article/add", restful.ArticleAdd)

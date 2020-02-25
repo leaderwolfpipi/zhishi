@@ -1,11 +1,12 @@
 package entity
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/leaderwolfpipi/zhishi/helper"
-	"github.com/shopspring/decimal"
+	// "github.com/shopspring/decimal"
 )
 
 // 用户点赞表
@@ -30,10 +31,10 @@ func (like *Like) TableName() string {
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
 func (like *Like) BeforeCreate(scope *gorm.Scope) error {
-	nodeId := (int64)helper.GetNodesConfig()[0].NodeId
-	id, err := helper.GenerateIdBySnowflake(nodeId)
+	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().N[0].NodeId)
+	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
-		panic("生成ID时发生异常: %s", err)
+		panic("生成ID时发生异常: %s" + err.Error())
 	}
 	scope.Set("ID", &id)
 	like.ID = id
@@ -42,4 +43,18 @@ func (like *Like) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("CreateTime", time.Now().Unix())
 
 	return nil
+}
+
+// 获取实体处理函数
+func (like *Like) GetLikeFunc(action string) helper.EntityFunc {
+	return func() interface{} {
+		var ret interface{}
+		if action == "delete" || action == "add" || action == "update" {
+			ret = &Like{}
+		} else if action == "findOne" || action == "findMore" {
+			ret = make([]Like, 0)
+		}
+
+		return ret
+	}
 }

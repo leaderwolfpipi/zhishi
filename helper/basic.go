@@ -50,10 +50,10 @@ type JwtConfig struct {
 
 // 节点配置结构
 type NodeConfig struct {
-	NodeId     `json:"nodeId"`     // 节点id
-	NodeName   `json:"nodeName"`   // 节点名
-	NodeIp     `json:"nodeIp"`     // 节点内网ip地址
-	NodeDomain `json:"nodeDomain"` // 节点域名地址
+	NodeId     string `json:"nodeId"`     // 节点id
+	NodeName   string `json:"nodeName"`   // 节点名
+	NodeIp     string `json:"nodeIp"`     // 节点内网ip地址
+	NodeDomain string `json:"nodeDomain"` // 节点域名地址
 }
 
 // token结构
@@ -66,20 +66,23 @@ type Nodes struct {
 	N []NodeConfig
 }
 
+// 定义实体处理函数
+type EntityFunc func() interface{}
+
 // 获取mysql配置信息
 func GetMysqlConfig() *Mysql {
-	var mysql Mysql{}
-	return GetConfig(&mysql).(*Mysql) 
+	mysql := Mysql{}
+	return GetConfig(&mysql).(*Mysql)
 }
 
 // 获取jwt-token配置信息
 func GetTokenConfig() *Token {
-	var token Token{}
-	return GetConfig(&token).(*Token) 
+	token := Token{}
+	return GetConfig(&token).(*Token)
 }
 
 // 获取节点集群配置信息
 func GetNodesConfig() *Nodes {
-	var nodes Nodes{}
-	return GetConfig(&nodes).(*Nodes) 
+	nodes := Nodes{}
+	return GetConfig(&nodes).(*Nodes)
 }

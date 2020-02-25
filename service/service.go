@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/leaderwolfpipi/zhishi/helper"
 	"github.com/leaderwolfpipi/zhishi/service/server/repository"
 )
 
@@ -13,7 +14,7 @@ type Service interface {
 	UserModify(user interface{}) error
 
 	// 根据pk查询
-	UserByPK(pk string, value int64, joinTable interface{}) (interface{}, error)
+	UserByPK(pk string, value int64, joinTable string) (interface{}, error)
 
 	// 根据username查询
 	UserByUsername(username string) (interface{}, error)
@@ -23,17 +24,18 @@ type Service interface {
 
 	//获取用户列表
 	Users(
+		joinTables map[string]string,
 		andWhere map[string]interface{},
 		orWhere map[string]interface{},
 		order map[string]string,
 		pageNum int,
-		pageSize int) (*helper.PageResult, error)
+		pageSize int) *helper.PageResult
 
 	// 添加文章
 	ArticleAdd(article interface{}) error
 
 	// 获取单篇文章
-	ArticleByPK(pk string, value int64, joinTable interface{}) interface{}
+	ArticleByPK(pk string, value int64, joinTable2 string) (interface{}, error)
 
 	// 分页获取文章
 	Articles(
@@ -42,7 +44,7 @@ type Service interface {
 		orWhere map[string]interface{},
 		order map[string]string,
 		pageNum int,
-		pageSize int) (*helper.PageResult, error)
+		pageSize int) *helper.PageResult
 
 	// 编辑文章
 	ArticleModify(article interface{}) error
@@ -54,16 +56,22 @@ type Service interface {
 	ArticleLike(like interface{}) error
 
 	// 取消点赞
-	ArticleUnlike(like interface{}) error
+	ArticleUnlike(andWhere map[string]interface{}) error
 
 	// 收藏文章
 	ArticleStar(star interface{}) error
 
 	// 取消收藏
-	ArticleUnStar(star interface{}) error
+	ArticleUnStar(andWhere map[string]interface{}) error
 
 	// 获取文章评论
-	ArticleComment(articleId int64) (*helper.PageResult, error)
+	ArticleComment(
+		joinTables map[string]string,
+		andWhere map[string]interface{},
+		orWhere map[string]interface{},
+		order map[string]string,
+		pageNum int,
+		pageSize int) *helper.PageResult
 
 	// 添加评论
 	CommentAdd(comment interface{}) error
@@ -78,13 +86,13 @@ type Service interface {
 	CommentLike(like interface{}) error
 
 	// 取消点赞
-	CommentUnlike(userId int64, commentId int64) error
+	CommentUnlike(userId uint64, commentId uint64) error
 
 	// 关注作者
 	AuthorFollow(follow interface{}) error
 
 	// 取消关注
-	AuthorUnFollow(follow interface{}) error
+	AuthorUnFollow(andWhere map[string]interface{}) error
 }
 
 // 定义Service接口的实现结构
@@ -92,7 +100,7 @@ type service struct {
 	repo repository.DbRepo
 }
 
-var serv Service = &service{}
+var serv *service = &service{}
 
 // 实例化Service对象
 func NewService(repo repository.DbRepo) Service {
@@ -139,7 +147,7 @@ func (s *service) Users(
 	order map[string]string,
 	pageNum int,
 	pageSize int) *helper.PageResult {
-	return s.repo.FindPage(joinTables, andWhere, orWhere, order, page, pageSize)
+	return s.repo.FindPage(joinTables, andWhere, orWhere, order, pageNum, pageSize)
 }
 
 // 首页接口
@@ -148,14 +156,25 @@ func (s *service) Articles(
 	andWhere map[string]interface{},
 	orWhere map[string]interface{},
 	order map[string]string,
-	page int,
+	pageNum int,
 	pageSize int) *helper.PageResult {
-	return s.repo.FindPage(joinTables, andWhere, orWhere, order, page, pageSize)
+	return s.repo.FindPage(joinTables, andWhere, orWhere, order, pageNum, pageSize)
 }
 
 // 获取单篇文章
 func (s *service) ArticleByPK(pk string, value int64, joinTable2 string) (interface{}, error) {
 	return s.repo.FindByPK(nil, pk, value, joinTable2)
+}
+
+// 文章评论列表
+func (s *service) ArticleComment(
+	joinTables map[string]string,
+	andWhere map[string]interface{},
+	orWhere map[string]interface{},
+	order map[string]string,
+	pageNum int,
+	pageSize int) *helper.PageResult {
+	return s.repo.FindPage(joinTables, andWhere, orWhere, order, pageNum, pageSize)
 }
 
 // 添加文章
@@ -180,31 +199,23 @@ func (s *service) ArticleLike(like interface{}) error {
 }
 
 // 取消文章点赞
-func (s *service) ArticleUnlike(like interface{}) error {
-	andWhere := map[string]interface{}{
-		"user_id":   like.UserId,
-		"object_id": like.ObjectId,
-	}
-	return s.repo.Delete(andWhere)
+func (s *service) ArticleUnlike(andWhere map[string]interface{}) error {
+	return s.repo.Delete(andWhere, nil)
 }
 
 // 收藏文章
-func (s *service) ArticleStar(star interface{}) {
+func (s *service) ArticleStar(star interface{}) error {
 	return s.repo.Insert(star)
 }
 
 // 取消收藏文章
-func (s *service) ArticleUnStar(star interface{}) {
-	andWhere := map[string]interface{}{
-		"user_id":    star.UserId,
-		"article_id": star.ArticleId,
-	}
-	return s.repo.Delete(andWhere)
+func (s *service) ArticleUnStar(andWhere map[string]interface{}) error {
+	return s.repo.Delete(andWhere, nil)
 }
 
 // 添加评论
 func (s *service) CommentAdd(comment interface{}) error {
-	return s.repo.Insert(star)
+	return s.repo.Insert(comment)
 }
 
 // 修改评论
@@ -223,12 +234,12 @@ func (s *service) CommentLike(like interface{}) error {
 }
 
 // 取消评论点赞
-func (s *service) CommentUnlike(userId int64, commentId int64) error {
+func (s *service) CommentUnlike(userId uint64, commentId uint64) error {
 	andWhere := map[string]interface{}{
 		"user_id":   userId,
 		"object_id": commentId,
 	}
-	return s.repo.Delete(andWhere)
+	return s.repo.Delete(andWhere, nil)
 }
 
 // 关注作者
@@ -237,12 +248,8 @@ func (s *service) AuthorFollow(follow interface{}) error {
 }
 
 // 取消关注作者
-func (s *service) AuthorUnFollow(follow interface{}) error {
-	andWhere := map[string]interface{}{
-		"user_id":     follow.UserId,
-		"followed_id": follow.FollowedId,
-	}
-	return s.repo.Delete(andWhere)
+func (s *service) AuthorUnFollow(andWhere map[string]interface{}) error {
+	return s.repo.Delete(andWhere, nil)
 }
 
 // END OF SERVICE
