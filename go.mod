@@ -8,6 +8,6 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/leaderwolfpipi/doris v1.1.1
 	github.com/leaderwolfpipi/logger v1.2.0
-	github.com/shopspring/decimal v0.0.0-20200105231215-408a2507e114
+	github.com/shopspring/decimal v0.0.0-20200226005030-a08b92da27ed
 	github.com/spf13/viper v1.6.2
 )

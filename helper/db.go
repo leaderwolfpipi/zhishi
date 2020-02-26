@@ -28,7 +28,7 @@ func init() {
 
 	// 实例化db
 	mysql := GetMysqlConfig()
-	Database, err := gorm.Open(mysql.Mysql.Driver, mysql.Mysql.Username+":"+mysql.Mysql.Password+mysql.Mysql.Url)
+	Database, err = gorm.Open(mysql.Mysql.Driver, mysql.Mysql.Username+":"+mysql.Mysql.Password+mysql.Mysql.Url)
 	if err != nil {
 		ErrLogger.Error("db connect error: " + err.Error())
 		os.Exit(0)
