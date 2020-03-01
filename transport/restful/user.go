@@ -2,7 +2,6 @@ package restful
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,79 +17,81 @@ import (
 
 // 用户相关接口
 func Login(c *doris.Context) error {
-	// 存储错误
-	var errs []error
-	errs = make([]error, 0)
-
 	// 初始化参数
+	var accessToken string  // 用于请求
+	var refreshToken string // 用于刷新
 	user := &entity.User{}
 	result := helper.JsonResult{Code: 200, Message: "success", Result: nil}
 
-	// debug
-	fmt.Println("测试1....")
-
 	// 参数绑定
-	_ = c.Form(user)
-
-	fmt.Println("测试2....")
-
-	fmt.Println(user.GetUserFunc("findOne"))
+	err := c.Form(user)
+	if err != nil {
+		// 绑定失败
+		result.Code = helper.ParamBindErr
+		result.Message = helper.StatusText(helper.ParamBindErr) + " [ " + err.Error() + " ]"
+		c.IndentedJson(200, result)
+		return err
+	}
 
 	// 实例化repo对象
 	repo := mysql.NewRepo(user.GetUserFunc("findOne"), helper.Database)
 
-	fmt.Println("测试2.5....")
-
 	// 传递repo到service层
 	service := service.NewService(repo)
 
-	fmt.Println("测试2.8....")
-
-	fmt.Println(user.Username)
-
-	fmt.Println("测试2.9....")
-
+	// fmt.Println("user.Username", user.Username)
 	// 调用service服务获取用户信息
 	tmp, err := service.UserByUsername(user.Username)
-
-	fmt.Println("测试3....")
-
-	userInfo := tmp.(*entity.User)
-
-	fmt.Println("测试4....")
-
-	if err != nil || userInfo.Password != helper.SHA256(user.Password) {
-		// 加入错误
-		errs = append(errs, err)
-
-		// 验证失败
-		result.Code = 401
-		result.Message = "用户名或密码错误"
-
-		// 返回结果
+	if err != nil && tmp == nil {
+		// 失败返回
+		result.Code = helper.LoginNotFoundErr
+		result.Message = helper.StatusText(helper.LoginNotFoundErr) + " [ " + err.Error() + " ] "
 		c.IndentedJson(200, result)
+		return err
 	} else {
-		// 签发token
-		err := createToken(c, userInfo)
+		// 类型转换
+		userInfo := tmp.(*entity.User)
+		if userInfo.Password != helper.SHA256(user.Password) {
+			result.Code = helper.LoginStatusErr
+			result.Message = helper.StatusText(helper.LoginStatusErr)
+			c.IndentedJson(200, result)
+			return errors.New(helper.StatusText(helper.LoginStatusErr))
+		}
 
+		// 更新user
+		user = userInfo
+
+		// 签发token
+		accessToken, refreshToken, err = createToken(c, userInfo)
 		if err != nil {
-			// 加入错误
-			errs = append(errs, err)
+			result.Code = helper.LoginTokenErr
+			result.Message = helper.StatusText(helper.LoginTokenErr) + " [ " + err.Error() + " ] "
+			c.IndentedJson(http.StatusOK, result)
+			c.Abort()
+			return err
 		}
 	}
 
-	fmt.Println("测试5....")
-
-	return getErrs(errs)
+	// 返回正确
+	result.Code = helper.LoginStatusOK
+	result.Message = helper.StatusText(helper.LoginStatusOK)
+	result.Result = doris.D{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"user":          user,
+	}
+	c.IndentedJson(http.StatusOK, result)
+	c.Abort()
+	return nil
 }
 
 // 创建token和refreshToken函数
-func createToken(c *doris.Context, user *entity.User) error {
+func createToken(c *doris.Context, user *entity.User) (string, string, error) {
 	// 计算生效时间
-	activeTime, _ := strconv.Atoi(strings.TrimRight(helper.GetTokenConfig().T.ActiveTime, "sS "))
+	activeTime, _ := strconv.Atoi(strings.TrimRight(helper.GetTokenConfig().Token.ActiveTime, "sS "))
 
 	// 计算过期时间
-	expiredTime, _ := strconv.Atoi(strings.TrimRight(helper.GetTokenConfig().T.ExpiredTime, "sS "))
+	expiredTime, _ := strconv.Atoi(strings.TrimRight(helper.GetTokenConfig().Token.ExpiredTime, "dD "))
 
 	// 负载参数
 	claims := helper.CustomClaims{
@@ -98,48 +99,34 @@ func createToken(c *doris.Context, user *entity.User) error {
 		Username:  user.Username,
 		Telephone: user.Telephone,
 		StandardClaims: jwt.StandardClaims{
-			NotBefore: time.Now().Unix() + int64(activeTime),       // 生效时间
-			ExpiresAt: time.Now().Unix() + int64(expiredTime*3600), // 过期时间
-			Issuer:    helper.GetTokenConfig().T.Issuer,
+			NotBefore: time.Now().Unix() + int64(activeTime),          // 生效时间
+			ExpiresAt: time.Now().Unix() + int64(expiredTime*24*3600), // 过期时间
+			Issuer:    helper.GetTokenConfig().Token.Issuer,
 		},
 	}
 
+	// 计算access_token和refresh_token
 	j := helper.NewJWT()
-	accessToken, refreshToken, err := j.CreateToken(claims)
-
-	// 出错
-	if err != nil {
-		c.IndentedJson(http.StatusOK, helper.JsonResult{
-			Code:    helper.LoginStatusErr,
-			Message: helper.StatusText(helper.LoginStatusErr) + " : " + err.Error(),
-		})
-		// 退出
-		c.Abort()
-		return err
-	}
-
-	// 成功
-	c.IndentedJson(http.StatusOK, helper.JsonResult{
-		Code:    helper.LoginStatusOK,
-		Message: helper.StatusText(helper.LoginStatusOK),
-		Result: doris.D{
-			"accessToken":  accessToken,
-			"refreshToken": refreshToken,
-			"user":         user,
-		}})
-
-	return nil
+	return j.CreateToken(claims)
 }
 
 // 注册接口
 func Register(c *doris.Context) error {
-	var err error = nil
 	// 获取用户信息
 	user := &entity.User{}
-	result := helper.JsonResult{Code: 200, Message: "success"}
+	result := helper.JsonResult{
+		Code:    helper.UserAddOk,
+		Message: helper.StatusText(helper.UserAddOk)}
 	// 获取用户信息
 	// 参数绑定
-	_ = c.Form(user)
+	err := c.Form(user)
+	if err != nil {
+		result.Code = helper.ParamBindErr
+		result.Message = helper.StatusText(helper.ParamBindErr)
+		c.IndentedJson(200, result)
+		c.Abort()
+		return err
+	}
 
 	// 实例化repo对象
 	repo := mysql.NewRepo(user.GetUserFunc("findOne"), helper.Database)
@@ -149,28 +136,81 @@ func Register(c *doris.Context) error {
 
 	// 检查用户是否已存在
 	tmp, err := service.UserByUsername(user.Username)
-	userInfo := tmp.(*entity.User)
-	if userInfo != nil {
-		// 验证失败
+	if err != nil && tmp == nil {
+		// 用户不存在
+		user.Password = helper.SHA256(user.Password)
+		err = service.UserAdd(user)
+
+		// 插入失败
+		if err != nil {
+			result.Code = helper.UserAddErr
+			result.Message = helper.StatusText(helper.UserAddErr) + " [ " + err.Error() + " ] "
+			// 返回结果
+			c.IndentedJson(200, result)
+			c.Abort()
+			return err
+		}
+
+		// 返回成功
+		c.IndentedJson(200, result)
+		c.Abort()
+		return nil
+
+	} else {
+		// 用户已存在
 		result.Code = helper.ExistUsernameErr
 		result.Message = helper.StatusText(helper.ExistUsernameErr)
 		// 返回结果
 		c.IndentedJson(200, result)
 		c.Abort()
-	} else {
-		// 执行插入
-		err = service.UserAdd(user)
+		return errors.New(helper.StatusText(helper.ExistUsernameErr))
 	}
 
-	return err
+	return nil
 }
 
-// 重组错误
-func getErrs(errs []error) error {
-	errStr := ""
-	for _, err := range errs {
-		errStr += err.Error()
+// 刷新token
+func RefreshToken(c *doris.Context) error {
+	// 初始化结果
+	result := helper.JsonResult{
+		Code:    helper.RefreshTokenOk,
+		Message: helper.StatusText(helper.RefreshTokenOk)}
+
+	// 获取刷新token和请求token
+	refreshToken := c.FormParam("refresh_token")
+
+	// 重新计算access_token
+	j := helper.NewJWT()
+
+	newToken, _, err := j.RefreshToken(refreshToken)
+	if err != nil {
+		// 反回错误信息
+		result.Code = helper.RefreshTokenErr
+		result.Message = helper.StatusText(helper.RefreshTokenErr) + " [ " + err.Error() + " ] "
+		result.Result = doris.D{
+			"access_token":  "",
+			"refresh_token": refreshToken,
+		}
+		c.IndentedJson(http.StatusOK, result)
+		c.Abort()
+		return nil
 	}
 
-	return errors.New(errStr)
+	// 返回正确
+	result.Code = helper.RefreshTokenOk
+	result.Message = helper.StatusText(helper.RefreshTokenOk)
+	result.Result = doris.D{
+		"access_token":  newToken,
+		"refresh_token": refreshToken,
+	}
+	c.IndentedJson(http.StatusOK, result)
+	c.Abort()
+	return nil
+}
+
+// 重置用户密码
+func ResetPWD() {
+
+	// @TODO...
+
 }

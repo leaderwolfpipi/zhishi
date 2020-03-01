@@ -126,7 +126,7 @@ func (s *service) UserByPK(pk string, value int64, joinTable2 string) (interface
 // 根据用户名查询用户
 func (s *service) UserByUsername(username string) (interface{}, error) {
 	andWhere := map[string]interface{}{
-		"username": username,
+		"username=?": username,
 	}
 	return s.repo.FindOne(nil, andWhere, nil, nil)
 }
@@ -134,7 +134,7 @@ func (s *service) UserByUsername(username string) (interface{}, error) {
 // 根据电话号码查询
 func (s *service) UserByTelephone(telephone string) (interface{}, error) {
 	andWhere := map[string]interface{}{
-		"telephone": telephone,
+		"telephone=?": telephone,
 	}
 	return s.repo.FindOne(nil, andWhere, nil, nil)
 }

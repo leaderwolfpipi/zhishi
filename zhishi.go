@@ -23,7 +23,7 @@ func main() {
 	d.Use(middleware.Recovery())
 
 	// 设置token秘钥
-	helper.SetSignKey(helper.GetTokenConfig().T.SignKey)
+	helper.SetSignKey(helper.GetTokenConfig().Token.SignKey)
 
 	// 注册路由
 	router.RegisterAuthRoutes(d)

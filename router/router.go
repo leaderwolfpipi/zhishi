@@ -1,6 +1,8 @@
 package router
 
 import (
+	// "fmt"
+
 	"github.com/leaderwolfpipi/doris"
 	"github.com/leaderwolfpipi/doris/middleware"
 	"github.com/leaderwolfpipi/zhishi/helper"
@@ -14,6 +16,7 @@ func RegisterAuthRoutes(d *doris.Doris) {
 	api := d.Group("/api/v1")
 
 	// JWT验证
+	// fmt.Println(helper.GetSignKey())
 	api.Use(middleware.JWT(helper.GetSignKey()))
 
 	// 添加文章
@@ -63,6 +66,9 @@ func RegisterAuthRoutes(d *doris.Doris) {
 func RegisterNoAuthRoutes(d *doris.Doris) {
 	// api-no-auth路由组
 	api := d.Group("/api-no-auth/v1")
+
+	// 刷新token
+	api.POST("/refresh-token", restful.RefreshToken)
 
 	// 首页路由
 	api.POST("/", restful.Index)

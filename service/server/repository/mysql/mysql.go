@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
+	//"github.com/leaderwolfpipi/zhishi/entity"
 	"github.com/leaderwolfpipi/zhishi/helper"
 )
 
@@ -163,7 +164,9 @@ func (r *repo) FindOne(
 	// 设置and条件
 	if andWhere != nil && len(andWhere) > 0 {
 		for k, v := range andWhere {
+			// fmt.Println(k, v)
 			r.db = r.db.Where(k, v)
+			// r.db = r.db.Where("username=?", "zhangsan")
 		}
 	}
 
@@ -185,7 +188,6 @@ func (r *repo) FindOne(
 	// 查询单条记录
 	row := r.entity()
 	err := r.db.First(row).Error
-
 	if err != nil {
 		return nil, err
 	}

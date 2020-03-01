@@ -5,10 +5,10 @@ server:
         # 节点数组
         # node-id
         # 用于分布式系统uid的生成
-        node_id: 1
+        nodeId: 1
         # 节点名称
-        node_name: zhishi-node-1
+        nodeName: zhishi-node-1
         # 节点内网ip地址
-        node_ip: 127.0.0.1
+        nodeIp: 127.0.0.1
         # 主机域名
-        node_domain: http://www.zhishi.com
+        nodeDomain: http://www.zhishi.com

@@ -28,9 +28,9 @@ type Article struct {
 	// 文章状态
 	Status uint8 `gorm:"type:tinyint(4);column:status;default:1;" json:"status" param:"status" form:"status"`
 	// 创建时间
-	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"create_time" form:"create_time"`
+	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time"`
 	// 更新时间
-	LastUpdateTime int `gorm:"type:int(11);column:last_update_time;default:0;" json:"last_update_time" param:"last_update_time" form:"last_update_time"`
+	LastUpdateTime int `gorm:"type:int(11);column:last_update_time;default:0;" json:"last_update_time"`
 	// 关联内容表（1:1）
 	ArticleContent ArticleContent `gorm:"ForeignKey:ArticleId;association_foreignkey:ID"`
 	// 关联like表
@@ -49,7 +49,7 @@ func (article *Article) TableName() string {
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
 func (article *Article) BeforeCreate(scope *gorm.Scope) error {
-	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().N[0].NodeId)
+	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().Server[0].NodeId)
 	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
 		panic("生成ID时发生异常: %s" + err.Error())
@@ -75,10 +75,10 @@ func (article *Article) BeforeUpdate(scope *gorm.Scope) error {
 func (article *Article) GetArticleFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
-		if action == "delete" || action == "add" || action == "update" {
-			ret = &Article{}
-		} else if action == "findOne" || action == "findMore" {
+		if action == "findMore" {
 			ret = make([]Article, 0)
+		} else {
+			ret = new(Article)
 		}
 
 		return ret

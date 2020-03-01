@@ -28,6 +28,12 @@ const (
 	CommentUnLikeErr  = 20021
 	FollowErr         = 20022
 	UnFollowErr       = 20023
+	LoginNotFoundErr  = 20024
+	LoginFindUserErr  = 20025
+	LoginTokenErr     = 20026
+	ParamBindErr      = 20027
+	UserAddErr        = 20028
+	RefreshTokenErr   = 20029
 	LoginStatusOK     = 20200
 	SaveStatusOK      = 20201
 	DeleteStatusOK    = 20202
@@ -44,6 +50,8 @@ const (
 	CommentUnLikeOk   = 20213
 	FollowOk          = 20214
 	UnFollowOk        = 20215
+	UserAddOk         = 20216
+	RefreshTokenOk    = 20217
 	SaveObjIsNil      = 20400
 	DeleteObjIsNil    = 20401
 	UpdateObjIsNil    = 20402
@@ -66,6 +74,7 @@ var statusText = map[int]string{
 	LoginStatusOK:     "登陆成功！",
 	SaveStatusOK:      "保存成功！",
 	SaveStatusErr:     "保存失败！",
+	UserAddOk:         "用户添加成功！",
 	SaveObjIsNil:      "保存的对象为空！",
 	DeleteStatusOK:    "删除成功！",
 	DeleteStatusErr:   "删除失败！",
@@ -102,6 +111,13 @@ var statusText = map[int]string{
 	CommentUnLikeOk:   "评论取消点赞成功！",
 	FollowOk:          "关注成功！",
 	UnFollowOk:        "取消关注成功！",
+	RefreshTokenOk:    "刷新token成功！",
+	LoginNotFoundErr:  "用户不存在！",
+	LoginFindUserErr:  "查询用户出错！",
+	LoginTokenErr:     "用户token签发失败！",
+	ParamBindErr:      "参数绑定错误！",
+	UserAddErr:        "用户添加失败！",
+	RefreshTokenErr:   "刷新token错误！",
 
 	// 正则相关错误信息
 	FixLessZeroErr:    "验证规则错误，定长小于0",

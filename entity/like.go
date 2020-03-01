@@ -31,7 +31,7 @@ func (like *Like) TableName() string {
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
 func (like *Like) BeforeCreate(scope *gorm.Scope) error {
-	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().N[0].NodeId)
+	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().Server[0].NodeId)
 	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
 		panic("生成ID时发生异常: %s" + err.Error())
@@ -49,10 +49,10 @@ func (like *Like) BeforeCreate(scope *gorm.Scope) error {
 func (like *Like) GetLikeFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
-		if action == "delete" || action == "add" || action == "update" {
-			ret = &Like{}
-		} else if action == "findOne" || action == "findMore" {
+		if action == "findMore" {
 			ret = make([]Like, 0)
+		} else {
+			ret = new(Like)
 		}
 
 		return ret

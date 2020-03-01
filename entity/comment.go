@@ -39,7 +39,7 @@ func (comment *Comment) TableName() string {
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
 func (comment *Comment) BeforeCreate(scope *gorm.Scope) error {
-	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().N[0].NodeId)
+	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().Server[0].NodeId)
 	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
 		panic("生成ID时发生异常: %s" + err.Error())
@@ -65,10 +65,10 @@ func (comment *Comment) BeforeUpdate(scope *gorm.Scope) error {
 func (comment *Comment) GetCommentFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
-		if action == "delete" || action == "add" || action == "update" {
-			ret = &Comment{}
-		} else if action == "findOne" || action == "findMore" {
+		if action == "findMore" {
 			ret = make([]Comment, 0)
+		} else {
+			ret = new(Comment)
 		}
 
 		return ret

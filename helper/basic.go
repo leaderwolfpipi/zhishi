@@ -29,7 +29,7 @@ type MysqlConfig struct {
 	Url          string `json:"url"`          // 连接url
 	Username     string `json:"username"`     // 用户名
 	Password     string `json:"password"`     // 密码
-	MaxOpenConns int    `json:maxOpenConns`   // 最大打开连接数
+	MaxOpenConns int    `json:"maxOpenConns"` // 最大打开连接数
 	MaxIdleConns int    `json:"maxIdleConns"` // 最大空闲连接数
 	Singular     bool   `json:"singular"`     // 表名不可为复数形式
 }
@@ -57,13 +57,13 @@ type NodeConfig struct {
 }
 
 // token结构
-type Token struct {
-	T JwtConfig
+type JwtToken struct {
+	Token JwtConfig
 }
 
 // 节点集群结构
 type Nodes struct {
-	N []NodeConfig
+	Server []NodeConfig
 }
 
 // 定义实体处理函数
@@ -76,9 +76,9 @@ func GetMysqlConfig() *DB {
 }
 
 // 获取jwt-token配置信息
-func GetTokenConfig() *Token {
-	token := Token{}
-	return GetConfig(&token).(*Token)
+func GetTokenConfig() *JwtToken {
+	token := JwtToken{}
+	return GetConfig(&token).(*JwtToken)
 }
 
 // 获取节点集群配置信息
