@@ -12,18 +12,25 @@ var ErrLogger, AccessLogger, WorkLogger, SQLLogger *logger.RotateFileLogger
 func Logger(outPath string) *logger.RotateFileLogger {
 	_, err := os.Stat(outPath)
 	if os.IsNotExist(err) {
-		// 不存在则创建
-		os.Create(outPath)
+		// 创建日志目录
+		os.MkdirAll(outPath, 0755)
 	}
 
 	// 返回日志实例
 	return logger.NewRotateFileLogger(outPath)
 }
 
-// 初始化日志实例
-func init() {
-	WorkLogger = Logger("logs/work.log")
-	AccessLogger = Logger("logs/access.log")
-	ErrLogger = Logger("logs/error.log")
-	SQLLogger = Logger("logs/sql.log")
+// 日志记录实例化与启动
+func init_logger() {
+	// 初始化记录器
+	WorkLogger = Logger("logs/work")
+	AccessLogger = Logger("logs/access")
+	ErrLogger = Logger("logs/error")
+	SQLLogger = Logger("logs/sql")
+
+	// 启动记录器
+	WorkLogger.Start()
+	AccessLogger.Start()
+	ErrLogger.Start()
+	SQLLogger.Start()
 }

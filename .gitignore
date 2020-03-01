@@ -1,2 +1,5 @@
 ./.git
 zhishi
+logs/
+dump.rdb
+vendor/
