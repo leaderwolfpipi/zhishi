@@ -41,7 +41,8 @@ func init() {
 	}
 	Database.DB().SetMaxOpenConns(mysql.Mysql.MaxOpenConns)
 	Database.DB().SetMaxIdleConns(mysql.Mysql.MaxIdleConns)
-	// Database...
+	// Handle database conn err: packets.go:36: unexpected EOF invalid connection
+	Database.DB().SetConnMaxLifetime(60 * time.Second)
 	Database.SetLogger(SQLLogger)
 	// Database.LogMode(mysql.DB.ShowSql)
 	Database.SingularTable(mysql.Mysql.Singular)

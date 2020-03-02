@@ -18,7 +18,7 @@ type Article struct {
 	// 作者id
 	UserId uint64 `gorm:"type:bigint(20);column:user_id;" json:"user_id" param:"user_id"`
 	// 内容id
-	ContentId uint64 `gorm:"type:bigint(20);column:content_id;" json:"content_id" param:"content_id"`
+	// ContentId uint64 `gorm:"type:bigint(20);column:content_id;" json:"content_id" param:"content_id"`
 	// 用户状态
 	ArticleType uint8 `gorm:"type:tinyint(4);column:article_type;default:1;" json:"article_type" param:"article_type" form:"article_type"`
 	// 文章价格
