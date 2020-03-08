@@ -5,6 +5,7 @@ package restful
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/leaderwolfpipi/doris"
 	"github.com/leaderwolfpipi/zhishi/entity"
@@ -24,14 +25,30 @@ func Comments(c *doris.Context) error {
 		Message: helper.StatusText(helper.ArticleCommentOk),
 	}
 
-	// 提取分页参数
-	var pageResult *helper.PageResult
+	// 设置分页参数
+	pageResult := &helper.PageResult{}
 	_ = c.Form(pageResult)
+	// 默认分页参数
+	if pageResult.PageNum == 0 {
+		pageResult.PageNum = 1
+	}
+	if pageResult.PageSize == 0 {
+		pageResult.PageSize = 100
+	}
 
 	// 提取atticle_id
-	article_id := c.Param("articleId").(int64)
+	article_id, _ := strconv.Atoi(c.FormParam("article_id"))
 	andWhere := map[string]interface{}{
-		"article_id": article_id,
+		"article_id = ?": article_id,
+	}
+
+	// 参数校验
+	if article_id == 0 {
+		err = errors.New("article_id cannot be empty!")
+		jsonResult.Code = helper.ArticleCommentErr
+		jsonResult.Message = helper.StatusText(helper.ArticleCommentErr) + " [ origin err: " + err.Error() + " ]"
+		c.IndentedJson(http.StatusOK, jsonResult)
+		return err
 	}
 
 	// 排序条件
@@ -47,7 +64,8 @@ func Comments(c *doris.Context) error {
 	service := service.NewService(repo)
 
 	// 调用service的ArticleByPK接口
-	pageResult = service.ArticleComment(nil, andWhere, nil, order, pageResult.PageNum, pageResult.PageSize)
+	pageResult = service.ArticleComments(nil, andWhere, nil, order, pageResult.PageNum, pageResult.PageSize)
+	pageResult.Total = len(*pageResult.Rows.(*[]entity.Comment))
 	if pageResult == nil {
 		// 异常状态码返回400
 		err = errors.New(helper.StatusText(helper.ArticleCommentErr))
@@ -111,14 +129,21 @@ func CommentModify(c *doris.Context) error {
 	comment := &entity.Comment{}
 	_ = c.Form(comment)
 
-	// 实例化repo对象
-	repo := mysql.NewRepo(comment.GetCommentFunc("update"), helper.Database)
+	// 参数校验
+	if comment.ID == 0 {
+		err = errors.New("comment_id cannot be empty!")
+	} else {
+		// 实例化repo对象
+		repo := mysql.NewRepo(comment.GetCommentFunc("update"), helper.Database)
 
-	// 传递repo到service层
-	service := service.NewService(repo)
+		// 传递repo到service层
+		service := service.NewService(repo)
 
-	// 调用service的ArticleByPK接口
-	err = service.CommentModify(comment)
+		// 调用service的ArticleByPK接口
+		err = service.CommentModify(comment)
+	}
+
+	// 结果判定
 	if err != nil {
 		// 异常状态码返回400
 		jsonResult.Code = helper.CommentModifyErr
@@ -137,26 +162,34 @@ func CommentDel(c *doris.Context) error {
 
 	// 初始化结果集
 	jsonResult := helper.JsonResult{
-		Code:    helper.ArticleOk,
-		Message: helper.StatusText(helper.ArticleOk),
+		Code:    helper.CommentDelOk,
+		Message: helper.StatusText(helper.CommentDelOk),
 	}
 
 	// 获取参数
 	comment := &entity.Comment{}
-	articleId := c.Param("articleId").(int64)
+	tmp, _ := strconv.Atoi(c.FormParam("comment_id"))
+	commentId := uint64(tmp)
 
-	// 实例化repo对象
-	repo := mysql.NewRepo(comment.GetCommentFunc("delete"), helper.Database)
+	// 参数校验
+	if commentId == 0 {
+		err = errors.New("comment_id cannot be empty!")
+	} else {
+		// 实例化repo对象
+		repo := mysql.NewRepo(comment.GetCommentFunc("delete"), helper.Database)
 
-	// 传递repo到service层
-	service := service.NewService(repo)
+		// 传递repo到service层
+		service := service.NewService(repo)
 
-	// 调用删除接口
-	err = service.CommentDel(articleId)
+		// 调用删除接口
+		err = service.CommentDel(commentId)
+	}
+
+	// 错误判断
 	if err != nil {
 		// 异常状态码返回400
-		jsonResult.Code = helper.ArticleDelErr
-		jsonResult.Message = helper.StatusText(helper.ArticleDelErr) + err.Error()
+		jsonResult.Code = helper.CommentDelErr
+		jsonResult.Message = helper.StatusText(helper.CommentDelErr) + err.Error()
 	}
 
 	// 返回结果
@@ -179,12 +212,25 @@ func CommentLike(c *doris.Context) error {
 	like := &entity.Like{}
 	_ = c.Form(like)
 
-	// 实例化service
-	repo := mysql.NewRepo(like.GetLikeFunc("add"), helper.Database)
-	service := service.NewService(repo)
+	// 参数校验
+	if like.CommentId == 0 || like.UserId == 0 {
+		err = errors.New("comment_id and user_id cannot be empty!")
+	} else {
+		// 实例化service
+		repo := mysql.NewRepo(like.GetLikeFunc("add"), helper.Database)
+		service := service.NewService(repo)
 
-	// 执行插入
-	err = service.CommentLike(like)
+		// 点赞查重
+		andWhere := map[string]interface{}{
+			"user_id = ? ":    like.UserId,
+			"comment_id = ? ": like.CommentId,
+		}
+		dupli := service.LikeExist(andWhere)
+		if !dupli {
+			// 执行插入
+			err = service.CommentLike(like)
+		}
+	}
 
 	// 结果判断
 	if err != nil {
@@ -213,12 +259,17 @@ func CommentUnlike(c *doris.Context) error {
 	like := &entity.Like{}
 	_ = c.Form(like)
 
-	// 实例化service
-	repo := mysql.NewRepo(like.GetLikeFunc("delete"), helper.Database)
-	service := service.NewService(repo)
+	// 参数校验
+	if like.CommentId == 0 || like.UserId == 0 {
+		err = errors.New("comment_id and user_id cannot be empty!")
+	} else {
+		// 实例化service
+		repo := mysql.NewRepo(like.GetLikeFunc("delete"), helper.Database)
+		service := service.NewService(repo)
 
-	// 执行插入
-	err = service.CommentUnlike(like.UserId, like.ObjectId)
+		// 执行插入
+		err = service.CommentUnlike(like.UserId, like.CommentId)
+	}
 
 	// 结果判断
 	if err != nil {

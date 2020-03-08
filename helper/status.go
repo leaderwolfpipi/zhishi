@@ -34,6 +34,9 @@ const (
 	ParamBindErr      = 20027
 	UserAddErr        = 20028
 	RefreshTokenErr   = 20029
+	ArticleDupliErr   = 20030
+	ArticleIdEmptyErr = 20031
+	CommentDelErr     = 20032
 	LoginStatusOK     = 20200
 	SaveStatusOK      = 20201
 	DeleteStatusOK    = 20202
@@ -46,12 +49,13 @@ const (
 	ArticleCommentOk  = 20209
 	CommentAddOk      = 20210
 	CommentModifyOk   = 20211
-	CommentLikeOk     = 20212
-	CommentUnLikeOk   = 20213
-	FollowOk          = 20214
-	UnFollowOk        = 20215
-	UserAddOk         = 20216
-	RefreshTokenOk    = 20217
+	CommentDelOk      = 20212
+	CommentLikeOk     = 20213
+	CommentUnLikeOk   = 20214
+	FollowOk          = 20215
+	UnFollowOk        = 20216
+	UserAddOk         = 20217
+	RefreshTokenOk    = 20218
 	SaveObjIsNil      = 20400
 	DeleteObjIsNil    = 20401
 	UpdateObjIsNil    = 20402
@@ -85,6 +89,8 @@ var statusText = map[int]string{
 	ArticlesPageErr:   "文章分页查找错误！",
 	ArticleGetErr:     "获取单篇文章错误！",
 	ArticleAddErr:     "添加单篇文章错误！",
+	ArticleDupliErr:   "添加的文章已存在！",
+	ArticleIdEmptyErr: "文章id为空或不存在！",
 	ArticleModifyErr:  "编辑单篇文章错误！",
 	ArticleDelErr:     "删除单篇文章错误！",
 	ArticleLikeErr:    "文章点赞失败！",
@@ -94,6 +100,7 @@ var statusText = map[int]string{
 	ArticleCommentErr: "获取文章评论失败！",
 	CommentAddErr:     "评论添加失败",
 	CommentModifyErr:  "评论修改失败！",
+	CommentDelErr:     "删除评论失败！",
 	CommentLikeErr:    "评论点赞失败！",
 	CommentUnLikeErr:  "评论取消点赞失败！",
 	FollowErr:         "关注失败！",
@@ -107,6 +114,7 @@ var statusText = map[int]string{
 	ArticleCommentOk:  "获取文章评论成功！",
 	CommentAddOk:      "评论成功！",
 	CommentModifyOk:   "修改评论成功！",
+	CommentDelOk:      "删除评论成功！",
 	CommentLikeOk:     "评论点赞成功！",
 	CommentUnLikeOk:   "评论取消点赞成功！",
 	FollowOk:          "关注成功！",

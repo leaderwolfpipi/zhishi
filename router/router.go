@@ -1,8 +1,6 @@
 package router
 
 import (
-	// "fmt"
-
 	"github.com/leaderwolfpipi/doris"
 	"github.com/leaderwolfpipi/doris/middleware"
 	"github.com/leaderwolfpipi/zhishi/helper"
@@ -23,70 +21,71 @@ func RegisterAuthRoutes(d *doris.Doris) {
 	api.POST("/article/add", restful.ArticleAdd)
 
 	// 编辑文章
-	api.POST("/article/:articleId/modify", restful.ArticleModify)
+	api.POST("/article/modify", restful.ArticleModify)
 
 	// 删除文章
-	api.POST("/article/:articleId/del", restful.ArticleDel)
+	api.POST("/article/del", restful.ArticleDel)
 
 	// 点赞文章
-	api.POST("/article/:articleId/like", restful.ArticleLike)
+	api.POST("/article/like", restful.ArticleLike)
 
 	// 取消文章点赞
-	api.POST("/article/:articleId/unlike", restful.ArticleUnlike)
+	api.POST("/article/unlike", restful.ArticleUnlike)
 
 	// 收藏文章
-	api.POST("/article/:articleId/star", restful.ArticleStar)
+	api.POST("/article/star", restful.ArticleStar)
 
 	// 取消收藏
-	api.POST("/article/:articleId/unstar", restful.ArticleUnStar)
+	api.POST("/article/unstar", restful.ArticleUnStar)
 
 	// 添加评论
 	api.POST("/comment/add", restful.CommentAdd)
 
 	// 编辑评论
-	api.POST("/comment/:commentId/modify", restful.CommentModify)
+	api.POST("/comment/modify", restful.CommentModify)
 
 	// 删除评论
-	api.POST("/comment/:commentId/del", restful.CommentDel)
+	api.POST("/comment/del", restful.CommentDel)
 
 	// 评论点赞
-	api.POST("/comment/:commentId/like", restful.CommentLike)
+	api.POST("/comment/like", restful.CommentLike)
 
 	// 取消评论点赞
-	api.POST("/comment/:commentId/unlike", restful.CommentUnlike)
+	api.POST("/comment/unlike", restful.CommentUnlike)
 
 	// 关注作者
-	api.POST("/author/:user_id/follow", restful.Follow)
+	api.POST("/author/follow", restful.Follow)
 
 	// 取消关注
-	api.POST("/author/:user_id/unfollow", restful.Unfollow)
+	api.POST("/author/unfollow", restful.Unfollow)
 }
 
 // 非鉴权路由
 func RegisterNoAuthRoutes(d *doris.Doris) {
-	// api-no-auth路由组
-	api := d.Group("/api-no-auth/v1")
-
-	// 刷新token
-	api.POST("/refresh-token", restful.RefreshToken)
-
-	// 首页路由
-	api.POST("/", restful.Index)
-
+	// 未分组接口
 	// 登录路由
-	api.POST("/login", restful.Login)
+	d.POST("/login", restful.Login)
 
 	// 注册路由
-	api.POST("/register", restful.Register)
+	d.POST("/register", restful.Register)
+
+	// 刷新token
+	d.POST("/refresh-token", restful.RefreshToken)
+
+	// 重置密码
+	d.POST("/reset-pwd", restful.ResetPWD)
+
+	// 首页路由
+	d.POST("/", restful.Index)
 
 	// 搜索列表
-	api.POST("/search", restful.Search)
+	d.POST("/search", restful.Search)
 
 	// 获取文章
-	api.GET("/article/:articleId", restful.Article)
+	d.POST("/article", restful.Article)
 
 	// 文章评论
-	api.GET("/article/:articleId/comments", restful.Comments)
+	d.POST("/article/comments", restful.Comments)
 }
 
 // 注册rpc路由

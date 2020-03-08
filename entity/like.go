@@ -17,10 +17,22 @@ type Like struct {
 	LikeType uint8 `gorm:"type:tinyint(4);column:like_type;default:1;" json:"like_type" param:"like_type" form:"like_type"`
 	// 评论人id
 	UserId uint64 `gorm:"type:bigint(20);column:user_id;" json:"user_id" param:"user_id"`
-	// 内容id
-	ObjectId uint64 `gorm:"type:bigint(20);column:object_id;" json:"object_id" param:"object_id"`
+	// 文章id
+	ArticleId uint64 `gorm:"type:bigint(20);column:article_id;" json:"article_id" param:"article_id"`
+	// 评论id
+	CommentId uint64 `gorm:"type:bigint(20);column:comment_id;" json:"comment_id" param:"comment_id"`
 	// 创建时间
 	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"create_time" form:"create_time"`
+}
+
+// 初始函数执行建表和添加外键
+func init() {
+	// 执行数据迁移
+	// helper.Database.AutoMigrate(&Like{})
+
+	// 设置外键约束
+	// helper.Database.Model(&Like{}).AddForeignKey("comment_id", "zs_comment(comment_id)", "CASCADE", "CASCADE")
+	// helper.Database.Model(&Like{}).AddForeignKey("article_id", "zs_article(article_id)", "CASCADE", "CASCADE")
 }
 
 // 设置表名
@@ -50,9 +62,9 @@ func (like *Like) GetLikeFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
 		if action == "findMore" {
-			ret = make([]Like, 0)
+			ret = &[]Like{}
 		} else {
-			ret = new(Like)
+			ret = &Like{}
 		}
 
 		return ret

@@ -1,6 +1,7 @@
 package restful
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/leaderwolfpipi/doris"
@@ -26,12 +27,25 @@ func Follow(c *doris.Context) error {
 	follow := &entity.Follow{}
 	_ = c.Form(follow)
 
-	// 实例化service
-	repo := mysql.NewRepo(follow.GetFollowFunc("add"), helper.Database)
-	service := service.NewService(repo)
+	// 参数校验
+	if follow.UserId == 0 || follow.FollowedId == 0 {
+		err = errors.New("user_id and followed_id cannot be empty!")
+	} else {
+		// 实例化service
+		repo := mysql.NewRepo(follow.GetFollowFunc("add"), helper.Database)
+		service := service.NewService(repo)
 
-	// 执行插入
-	err = service.AuthorFollow(follow)
+		// 关注去重
+		andWhere := map[string]interface{}{
+			"user_id = ? ":     follow.UserId,
+			"followed_id = ? ": follow.FollowedId,
+		}
+		dupli := service.FollowExist(andWhere)
+		if !dupli {
+			// 执行插入
+			err = service.AuthorFollow(follow)
+		}
+	}
 
 	// 结果判断
 	if err != nil {
@@ -59,17 +73,24 @@ func Unfollow(c *doris.Context) error {
 	// 绑定参数
 	follow := &entity.Follow{}
 	_ = c.Form(follow)
-	andWhere := map[string]interface{}{
-		"user_id":     follow.UserId,
-		"followed_id": follow.FollowedId,
+
+	// 参数校验
+	if follow.UserId == 0 || follow.FollowedId == 0 {
+		err = errors.New("user_id and followed_id cannot be empty!")
+	} else {
+		// 设置where查询条件
+		andWhere := map[string]interface{}{
+			"user_id = ? ":     follow.UserId,
+			"followed_id = ? ": follow.FollowedId,
+		}
+
+		// 实例化service
+		repo := mysql.NewRepo(follow.GetFollowFunc("delete"), helper.Database)
+		service := service.NewService(repo)
+
+		// 取消关注
+		err = service.AuthorUnFollow(andWhere)
 	}
-
-	// 实例化service
-	repo := mysql.NewRepo(follow.GetFollowFunc("delete"), helper.Database)
-	service := service.NewService(repo)
-
-	// 执行插入
-	err = service.AuthorUnFollow(andWhere)
 
 	// 结果判断
 	if err != nil {

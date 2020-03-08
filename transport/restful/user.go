@@ -209,8 +209,8 @@ func RefreshToken(c *doris.Context) error {
 }
 
 // 重置用户密码
-func ResetPWD() {
+func ResetPWD(c *doris.Context) error {
 
 	// @TODO...
-
+	return nil
 }

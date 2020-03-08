@@ -21,6 +21,16 @@ type Follow struct {
 	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"create_time" form:"create_time"`
 }
 
+// 初始函数执行建表和添加外键
+func init() {
+	// 执行数据迁移
+	// helper.Database.AutoMigrate(&Follow{})
+
+	// 设置外键约束
+	helper.Database.Model(&Follow{}).AddForeignKey("user_id", "zs_user(user_id)", "CASCADE", "CASCADE")
+	helper.Database.Model(&Follow{}).AddForeignKey("followed_id", "zs_user(user_id)", "CASCADE", "CASCADE")
+}
+
 // 设置表名
 func (follow *Follow) TableName() string {
 	return "zs_follow"
@@ -48,9 +58,9 @@ func (follow *Follow) GetFollowFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
 		if action == "findMore" {
-			ret = make([]Follow, 0)
+			ret = &[]Follow{}
 		} else {
-			ret = new(Follow)
+			ret = &Follow{}
 		}
 
 		return ret

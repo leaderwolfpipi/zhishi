@@ -47,6 +47,15 @@ type User struct {
 	Followeds []User `gorm:"many2many:zs_follow;" param:"-"`
 }
 
+// 初始函数执行建表和添加外键
+func init() {
+	// 执行数据迁移
+	// helper.Database.AutoMigrate(&User{})
+
+	// 设置外键约束
+	// helper.Database.Model(&Star{}).AddForeignKey("article_id", "zs_article(article_id)", "CASCADE", "CASCADE")
+}
+
 // 设置表名
 func (user *User) TableName() string {
 	return "zs_user"
@@ -82,9 +91,9 @@ func (user *User) GetUserFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
 		if action == "findMore" {
-			ret = make([]User, 0)
+			ret = &[]User{}
 		} else {
-			ret = new(User)
+			ret = &User{}
 		}
 
 		return ret

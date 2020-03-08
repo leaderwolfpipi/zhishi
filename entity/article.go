@@ -6,7 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/leaderwolfpipi/zhishi/helper"
-	"github.com/shopspring/decimal"
+	// "github.com/shopspring/decimal"
 )
 
 // 文章实体表
@@ -17,12 +17,10 @@ type Article struct {
 	Title string `gorm:"type:varchar(50);unique_index;not null;column:title;" json:"title" param:"title" form:"title" validate:"required"`
 	// 作者id
 	UserId uint64 `gorm:"type:bigint(20);column:user_id;" json:"user_id" param:"user_id"`
-	// 内容id
-	// ContentId uint64 `gorm:"type:bigint(20);column:content_id;" json:"content_id" param:"content_id"`
 	// 用户状态
 	ArticleType uint8 `gorm:"type:tinyint(4);column:article_type;default:1;" json:"article_type" param:"article_type" form:"article_type"`
 	// 文章价格
-	Price decimal.Decimal `gorm:"type:decimal(11,2);column:price;" json:"price" param:"price" form:"price"`
+	Price string `gorm:"type:varchar(20);column:price;" json:"price" param:"price" form:"price"`
 	// 是否免费
 	IsFree uint8 `gorm:"type:tinyint(4);column:is_free;default:1;" json:"is_free" param:"is_free" form:"is_free"`
 	// 文章状态
@@ -32,13 +30,22 @@ type Article struct {
 	// 更新时间
 	LastUpdateTime int `gorm:"type:int(11);column:last_update_time;default:0;" json:"last_update_time"`
 	// 关联内容表（1:1）
-	ArticleContent ArticleContent `gorm:"ForeignKey:ArticleId;association_foreignkey:ID"`
+	ArticleContent ArticleContent `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"content"`
 	// 关联like表
-	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID"`
+	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID" json:"likes"`
 	// 关联star表
-	Stars []Star `gorm:"ForeignKey:ArticleId;association_foreignkey:ID"`
+	Stars []Star `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"stars"`
 	// 关联Comment表
-	Comments []Comment `gorm:"ForeignKey:ArticleId;association_foreignkey:ID"`
+	Comments []Comment `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"comments"`
+}
+
+// 初始函数执行建表和添加外键
+func init() {
+	// 执行数据迁移
+	// helper.Database.AutoMigrate(&Article{})
+
+	// 设置外键约束
+	helper.Database.Model(&Article{}).AddForeignKey("user_id", "zs_user(user_id)", "CASCADE", "CASCADE")
 }
 
 // 设置表名
@@ -76,9 +83,9 @@ func (article *Article) GetArticleFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
 		if action == "findMore" {
-			ret = make([]Article, 0)
+			ret = &[]Article{}
 		} else {
-			ret = new(Article)
+			ret = &Article{}
 		}
 
 		return ret

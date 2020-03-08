@@ -20,8 +20,19 @@ func Index(c *doris.Context) error {
 	}
 	// 参数获取与校验
 	article := &entity.Article{}
+	content := entity.ArticleContent{}
+	article.ArticleContent = content
 	pageResult := &helper.PageResult{}
 	_ = c.Form(pageResult)
+
+	// 0默认为第一页
+	if pageResult.PageNum == 0 {
+		pageResult.PageNum = 1
+	}
+	// 默认单页100条
+	if pageResult.PageSize == 0 {
+		pageResult.PageSize = 100
+	}
 
 	// 实例化repo对象
 	repo := mysql.NewRepo(article.GetArticleFunc("findMore"), helper.Database)
@@ -29,8 +40,34 @@ func Index(c *doris.Context) error {
 	// 传递repo到service层
 	service := service.NewService(repo)
 
+	// 设置预加载模型
+	preloads := map[string]string{
+		"zs_article_content": "ArticleContent",
+		"zs_like":            "Likes",
+		"zs_star":            "Stars",
+		"zs_comment":         "Comments",
+	}
+
+	// 设置排序参数
+	orderField := c.FormParam("orderby")
+	order := c.FormParam("order")
+	if orderField == "" {
+		// 默认按创建时间排序
+		orderField = "create_time"
+	}
+	if order == "" {
+		// 默认降序
+		order = "desc"
+	}
+	orders := map[string]string{
+		orderField: order,
+	}
+
 	// 调用service的Index接口
-	pageResult = service.Articles(nil, nil, nil, nil, pageResult.PageNum, pageResult.PageSize)
+	pageResult = service.Articles(preloads, nil, nil, orders, pageResult.PageNum, pageResult.PageSize)
+	pageResult.Total = len(*pageResult.Rows.(*[]entity.Article))
+
+	// 组织返回结果
 	if pageResult == nil {
 		// 异常状态码返回400
 		jsonResult.Code = helper.ArticlesPageErr

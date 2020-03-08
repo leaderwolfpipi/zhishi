@@ -24,11 +24,21 @@ type Comment struct {
 	// 文章状态
 	Status uint8 `gorm:"type:tinyint(4);column:status;default:1;" json:"status" param:"status" form:"status"`
 	// 创建时间
-	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"create_time" form:"create_time"`
+	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time"`
 	// 更新时间
-	LastUpdateTime int `gorm:"type:int(11);column:last_update_time;default:0;" json:"last_update_time" param:"last_update_time" form:"last_update_time"`
+	LastUpdateTime int `gorm:"type:int(11);column:last_update_time;default:0;" json:"last_update_time"`
 	// 关联like表
 	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID"`
+}
+
+// 初始函数执行建表和添加外键
+func init() {
+	// 执行数据迁移
+	// helper.Database.AutoMigrate(&Comment{})
+
+	// 设置外键约束
+	helper.Database.Model(&Comment{}).AddForeignKey("article_id", "zs_article(article_id)", "CASCADE", "CASCADE")
+	helper.Database.Model(&Comment{}).AddForeignKey("user_id", "zs_user(user_id)", "CASCADE", "CASCADE")
 }
 
 // 设置表名
@@ -66,9 +76,9 @@ func (comment *Comment) GetCommentFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
 		if action == "findMore" {
-			ret = make([]Comment, 0)
+			ret = &[]Comment{}
 		} else {
-			ret = new(Comment)
+			ret = &Comment{}
 		}
 
 		return ret

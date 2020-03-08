@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/jinzhu/gorm"
-	//"github.com/leaderwolfpipi/zhishi/entity"
 	"github.com/leaderwolfpipi/zhishi/helper"
 )
 
@@ -83,8 +82,19 @@ func (r *repo) Transaction(trans map[string]interface{}) error {
 
 // 更新
 func (r *repo) Update(item interface{}) error {
-	err := r.db.Save(item).Error
+	// 剔除对create_time的更新
+	err := r.db.Omit("create_time").Save(item).Error
 	return err
+}
+
+// 更新改变的并且非空字段
+// 会绕过钩子函数
+func (r *repo) UpdateColumns(item interface{}) error {
+	entity := r.entity() // 获取实体
+	// 开启调试模式
+	// return r.db.Model(entity).Debug().Updates(item).Error
+
+	return r.db.Model(entity).Updates(item).Error
 }
 
 // 根据where条件删除
@@ -109,19 +119,26 @@ func (r *repo) Delete(
 }
 
 // 根据主键删除
-func (r *repo) DeleteByPK(pk string, value int64) error {
+func (r *repo) DeleteByPK(pk string, value uint64) error {
 	key := pk + " = ?"
 	entity := r.entity()
 	err := r.db.Where(key, value).Delete(entity).Error
 	return err
 }
 
+// 级联删除
+func (r *repo) DeleteCascade(obj interface{}) error {
+	entity := r.entity()
+	return r.db.Delete(entity).Error
+}
+
 // 主键查找
 func (r *repo) FindByPK(
 	joinTables map[string]string,
 	pk string,
-	value int64,
-	joinTable2 string) (interface{}, error) {
+	value uint64,
+	preloads map[string]string,
+	preLimit int) (interface{}, error) {
 	// 联表查询
 	// 优先使用join查询语句
 	if joinTables != nil && len(joinTables) > 0 {
@@ -130,9 +147,18 @@ func (r *repo) FindByPK(
 		}
 	}
 
-	// joinTable没传时使用外键查询
-	if joinTables == nil && len(joinTable2) > 0 {
-		r.db = r.db.Preload(joinTable2)
+	// 定制preload
+	pcall := func(key string) func(*gorm.DB) *gorm.DB {
+		return func(db *gorm.DB) *gorm.DB {
+			return db.Order(key + ".create_time DESC").Limit(preLimit)
+		}
+	}
+
+	// 联表查询
+	if preloads != nil && len(preloads) > 0 {
+		for k, v := range preloads {
+			r.db = r.db.Preload(v, pcall(k))
+		}
 	}
 
 	// 设置where查询条件
@@ -150,23 +176,36 @@ func (r *repo) FindByPK(
 
 // 查找一条
 func (r *repo) FindOne(
-	joinTable map[string]string,
 	andWhere map[string]interface{},
 	orWhere map[string]interface{},
-	order map[string]string) (interface{}, error) {
+	order map[string]string,
+	preloads map[string]string,
+	preLimit int) (interface{}, error) {
 	// 联表查询
-	if joinTable != nil && len(joinTable) > 0 {
-		for k, v := range joinTable {
-			r.db = r.db.Joins("left join " + k + " on " + v)
+	//	if joinTable != nil && len(joinTable) > 0 {
+	//		for k, v := range joinTable {
+	//			r.db = r.db.Joins("left join " + k + " on " + v)
+	//		}
+	//	}
+
+	// 定制preload
+	pcall := func(key string) func(*gorm.DB) *gorm.DB {
+		return func(db *gorm.DB) *gorm.DB {
+			return db.Order(key + ".create_time DESC").Limit(preLimit)
+		}
+	}
+
+	// 联表查询
+	if preloads != nil && len(preloads) > 0 {
+		for k, v := range preloads {
+			r.db = r.db.Preload(v, pcall(k))
 		}
 	}
 
 	// 设置and条件
 	if andWhere != nil && len(andWhere) > 0 {
 		for k, v := range andWhere {
-			// fmt.Println(k, v)
 			r.db = r.db.Where(k, v)
-			// r.db = r.db.Where("username=?", "zhangsan")
 		}
 	}
 
@@ -188,6 +227,7 @@ func (r *repo) FindOne(
 	// 查询单条记录
 	row := r.entity()
 	err := r.db.First(row).Error
+
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +287,8 @@ func (r *repo) Find(
 }
 
 // 分页查找
-func (r *repo) FindPage(joinTable map[string]string,
+func (r *repo) FindPage(
+	preloads map[string]string,
 	andWhere map[string]interface{},
 	orWhere map[string]interface{},
 	order map[string]string,
@@ -257,10 +298,17 @@ func (r *repo) FindPage(joinTable map[string]string,
 	rows := r.entity()
 	count := 0
 
+	// 定制preload
+	pcall := func(key string) func(*gorm.DB) *gorm.DB {
+		return func(db *gorm.DB) *gorm.DB {
+			return db.Order(key + ".create_time DESC").Limit(pageSize)
+		}
+	}
+
 	// 联表查询
-	if joinTable != nil && len(joinTable) > 0 {
-		for k, v := range joinTable {
-			r.db = r.db.Joins("left join " + k + " on " + v)
+	if preloads != nil && len(preloads) > 0 {
+		for k, v := range preloads {
+			r.db = r.db.Preload(v, pcall(k))
 		}
 	}
 
@@ -282,7 +330,7 @@ func (r *repo) FindPage(joinTable map[string]string,
 	// 设置排序
 	if order != nil && len(order) > 0 {
 		for k, v := range order {
-			r.db.Order(k + " " + v)
+			r.db = r.db.Order(k + " " + v)
 		}
 	}
 
@@ -292,9 +340,11 @@ func (r *repo) FindPage(joinTable map[string]string,
 	}
 
 	// 执行查询
-	r.db.Find(&rows).Count(&count)
-
+	// 分页查询和统计数目冲突
+	// count数目计算放到上游
+	// r.db.Find(rows).Count(&count)
+	r.db.Find(rows)
 	pageData := &helper.PageResult{PageNum: pageNum, PageSize: pageSize, Total: count, Rows: rows}
-	return pageData
 
+	return pageData
 }

@@ -10,10 +10,10 @@ type LoginParams struct {
 
 // 单页结构
 type PageResult struct {
-	PageNum  int         // 当前页数
-	PageSize int         // 单页数目
-	Total    int         // 总记录数
-	Rows     interface{} // 返回记录
+	PageNum  int         `json:"pagenum" form:"pagenum" param:"pagenum"`    // 当前页数
+	PageSize int         `json:"pagesize" form:"pagesize" param:"pagesize"` // 单页数目
+	Total    int         `json:"total" form:"total" param:"total"`          // 总记录数
+	Rows     interface{} `json:"rows"`                                      // 返回记录
 }
 
 // 结果集定义

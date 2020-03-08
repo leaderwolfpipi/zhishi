@@ -14,7 +14,7 @@ type Service interface {
 	UserModify(user interface{}) error
 
 	// 根据pk查询
-	UserByPK(pk string, value int64, joinTable string) (interface{}, error)
+	UserByPK(pk string, value uint64, preloads map[string]string, preLimit int) (interface{}, error)
 
 	// 根据username查询
 	UserByUsername(username string) (interface{}, error)
@@ -24,7 +24,7 @@ type Service interface {
 
 	//获取用户列表
 	Users(
-		joinTables map[string]string,
+		preloads map[string]string,
 		andWhere map[string]interface{},
 		orWhere map[string]interface{},
 		order map[string]string,
@@ -35,11 +35,23 @@ type Service interface {
 	ArticleAdd(article interface{}) error
 
 	// 获取单篇文章
-	ArticleByPK(pk string, value int64, joinTable2 string) (interface{}, error)
+	ArticleByPK(
+		pk string,
+		value uint64,
+		preloads map[string]string,
+		preLimit int) (interface{}, error)
+
+	// 根据索引搜索一条记录
+	// 由于or查询会造成索引失效因此尽量不要用or条件
+	ArticleByIndex(
+		andWhere map[string]interface{},
+		order map[string]string,
+		preloads map[string]string,
+		preLimit int) (interface{}, error)
 
 	// 分页获取文章
 	Articles(
-		joinTables map[string]string,
+		preloads map[string]string,
 		andWhere map[string]interface{},
 		orWhere map[string]interface{},
 		order map[string]string,
@@ -50,13 +62,19 @@ type Service interface {
 	ArticleModify(article interface{}) error
 
 	// 删除文章
-	ArticleDel(articleId int64) error
+	ArticleDel(pk string, value uint64) error
+
+	// 点赞查重
+	LikeExist(andWhere map[string]interface{}) bool
 
 	// 点赞文章
 	ArticleLike(like interface{}) error
 
 	// 取消点赞
 	ArticleUnlike(andWhere map[string]interface{}) error
+
+	// 收藏查重
+	StarExist(andWhere map[string]interface{}) bool
 
 	// 收藏文章
 	ArticleStar(star interface{}) error
@@ -65,8 +83,8 @@ type Service interface {
 	ArticleUnStar(andWhere map[string]interface{}) error
 
 	// 获取文章评论
-	ArticleComment(
-		joinTables map[string]string,
+	ArticleComments(
+		preloads map[string]string,
 		andWhere map[string]interface{},
 		orWhere map[string]interface{},
 		order map[string]string,
@@ -80,13 +98,16 @@ type Service interface {
 	CommentModify(comment interface{}) error
 
 	// 删除评论
-	CommentDel(commentId int64) error
+	CommentDel(commentId uint64) error
 
 	// 点赞评论
 	CommentLike(like interface{}) error
 
 	// 取消点赞
 	CommentUnlike(userId uint64, commentId uint64) error
+
+	// 关注去重
+	FollowExist(andWhere map[string]interface{}) bool
 
 	// 关注作者
 	AuthorFollow(follow interface{}) error
@@ -119,16 +140,20 @@ func (s *service) UserModify(user interface{}) error {
 }
 
 // 根据主键查询用户
-func (s *service) UserByPK(pk string, value int64, joinTable2 string) (interface{}, error) {
-	return s.repo.FindByPK(nil, pk, value, joinTable2)
+func (s *service) UserByPK(
+	pk string,
+	value uint64,
+	preloads map[string]string,
+	preLimit int) (interface{}, error) {
+	return s.repo.FindByPK(nil, pk, value, preloads, preLimit)
 }
 
 // 根据用户名查询用户
 func (s *service) UserByUsername(username string) (interface{}, error) {
 	andWhere := map[string]interface{}{
-		"username=?": username,
+		"username = ? ": username,
 	}
-	return s.repo.FindOne(nil, andWhere, nil, nil)
+	return s.repo.FindOne(andWhere, nil, nil, nil, 10)
 }
 
 // 根据电话号码查询
@@ -136,45 +161,57 @@ func (s *service) UserByTelephone(telephone string) (interface{}, error) {
 	andWhere := map[string]interface{}{
 		"telephone=?": telephone,
 	}
-	return s.repo.FindOne(nil, andWhere, nil, nil)
+	return s.repo.FindOne(nil, andWhere, nil, nil, 10)
 }
 
 // 获取用户列表
 func (s *service) Users(
-	joinTables map[string]string,
+	preloads map[string]string,
 	andWhere map[string]interface{},
 	orWhere map[string]interface{},
 	order map[string]string,
 	pageNum int,
 	pageSize int) *helper.PageResult {
-	return s.repo.FindPage(joinTables, andWhere, orWhere, order, pageNum, pageSize)
+	return s.repo.FindPage(preloads, andWhere, orWhere, order, pageNum, pageSize)
 }
 
 // 首页接口
 func (s *service) Articles(
-	joinTables map[string]string,
+	preloads map[string]string,
 	andWhere map[string]interface{},
 	orWhere map[string]interface{},
 	order map[string]string,
 	pageNum int,
 	pageSize int) *helper.PageResult {
-	return s.repo.FindPage(joinTables, andWhere, orWhere, order, pageNum, pageSize)
+	return s.repo.FindPage(preloads, andWhere, orWhere, order, pageNum, pageSize)
 }
 
 // 获取单篇文章
-func (s *service) ArticleByPK(pk string, value int64, joinTable2 string) (interface{}, error) {
-	return s.repo.FindByPK(nil, pk, value, joinTable2)
+func (s *service) ArticleByPK(
+	pk string, value uint64,
+	preloads map[string]string,
+	preLimit int) (interface{}, error) {
+	return s.repo.FindByPK(nil, pk, value, preloads, preLimit)
+}
+
+// 基于索引条件查询一条数据
+func (s *service) ArticleByIndex(
+	andWhere map[string]interface{},
+	order map[string]string,
+	preloads map[string]string,
+	preLimit int) (interface{}, error) {
+	return s.repo.FindOne(andWhere, nil, order, preloads, preLimit)
 }
 
 // 文章评论列表
-func (s *service) ArticleComment(
-	joinTables map[string]string,
+func (s *service) ArticleComments(
+	preloads map[string]string,
 	andWhere map[string]interface{},
 	orWhere map[string]interface{},
 	order map[string]string,
 	pageNum int,
 	pageSize int) *helper.PageResult {
-	return s.repo.FindPage(joinTables, andWhere, orWhere, order, pageNum, pageSize)
+	return s.repo.FindPage(preloads, andWhere, orWhere, order, pageNum, pageSize)
 }
 
 // 添加文章
@@ -185,12 +222,22 @@ func (s *service) ArticleAdd(article interface{}) error {
 
 // 编辑文章
 func (s *service) ArticleModify(article interface{}) error {
-	return s.repo.Update(article)
+	return s.repo.UpdateColumns(article)
 }
 
 // 删除文章
-func (s *service) ArticleDel(articleId int64) error {
-	return s.repo.DeleteByPK("article_id", articleId)
+func (s *service) ArticleDel(pk string, value uint64) error {
+	// 级联删除
+	return s.repo.DeleteByPK(pk, value)
+}
+
+// 点赞查重
+func (s *service) LikeExist(andWhere map[string]interface{}) bool {
+	dupli, _ := s.repo.FindOne(andWhere, nil, nil, nil, 1)
+	if dupli != nil {
+		return true
+	}
+	return false
 }
 
 // 文章点赞
@@ -201,6 +248,15 @@ func (s *service) ArticleLike(like interface{}) error {
 // 取消文章点赞
 func (s *service) ArticleUnlike(andWhere map[string]interface{}) error {
 	return s.repo.Delete(andWhere, nil)
+}
+
+// 收藏查重
+func (s *service) StarExist(andWhere map[string]interface{}) bool {
+	dupli, _ := s.repo.FindOne(andWhere, nil, nil, nil, 1)
+	if dupli != nil {
+		return true
+	}
+	return false
 }
 
 // 收藏文章
@@ -224,7 +280,7 @@ func (s *service) CommentModify(comment interface{}) error {
 }
 
 // 删除评论
-func (s *service) CommentDel(commentId int64) error {
+func (s *service) CommentDel(commentId uint64) error {
 	return s.repo.DeleteByPK("comment_id", commentId)
 }
 
@@ -236,10 +292,19 @@ func (s *service) CommentLike(like interface{}) error {
 // 取消评论点赞
 func (s *service) CommentUnlike(userId uint64, commentId uint64) error {
 	andWhere := map[string]interface{}{
-		"user_id":   userId,
-		"object_id": commentId,
+		"user_id = ? ":    userId,
+		"comment_id = ? ": commentId,
 	}
 	return s.repo.Delete(andWhere, nil)
+}
+
+// 关注去重
+func (s *service) FollowExist(andWhere map[string]interface{}) bool {
+	dupli, _ := s.repo.FindOne(andWhere, nil, nil, nil, 1)
+	if dupli != nil {
+		return true
+	}
+	return false
 }
 
 // 关注作者

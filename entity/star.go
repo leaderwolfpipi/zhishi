@@ -23,6 +23,15 @@ type Star struct {
 	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"create_time" form:"create_time"`
 }
 
+// 初始函数执行建表和添加外键
+func init() {
+	// 执行数据迁移
+	// helper.Database.AutoMigrate(&Star{})
+
+	// 设置外键约束
+	helper.Database.Model(&Star{}).AddForeignKey("article_id", "zs_article(article_id)", "CASCADE", "CASCADE")
+}
+
 // 设置表名
 func (star *Star) TableName() string {
 	return "zs_star"
@@ -50,9 +59,9 @@ func (star *Star) GetStarFunc(action string) helper.EntityFunc {
 	return func() interface{} {
 		var ret interface{}
 		if action == "findMore" {
-			ret = make([]Star, 0)
+			ret = &[]Star{}
 		} else {
-			ret = new(Star)
+			ret = &Star{}
 		}
 
 		return ret

@@ -15,27 +15,35 @@ type DbRepo interface {
 	// 更新
 	Update(item interface{}) error
 
+	// 更新改变且非空的部分
+	UpdateColumns(item interface{}) error
+
 	// 删除
 	Delete(
 		where map[string]interface{},
 		orWhere map[string]interface{}) error
 
 	// 根据主键删除
-	DeleteByPK(pk string, value int64) error
+	DeleteByPK(pk string, value uint64) error
+
+	// 根据结构对象级联删除
+	DeleteCascade(obj interface{}) error
 
 	// 主键查找
 	FindByPK(
 		joinTables map[string]string,
 		pk string,
-		value int64,
-		joinTable2 string) (interface{}, error)
+		value uint64,
+		preloads map[string]string,
+		preLimit int) (interface{}, error)
 
 	// 查找一条
 	FindOne(
-		joinTables map[string]string,
 		andWhere map[string]interface{},
 		orWhere map[string]interface{},
-		order map[string]string) (interface{}, error)
+		order map[string]string,
+		preloads map[string]string,
+		preLimit int) (interface{}, error)
 
 	// 查找全部
 	Find(
@@ -45,7 +53,8 @@ type DbRepo interface {
 		order map[string]string) (interface{}, error)
 
 	// 分页查找
-	FindPage(joinTables map[string]string,
+	FindPage(
+		preloads map[string]string, // 预加载表
 		andWhere map[string]interface{},
 		orWhere map[string]interface{},
 		order map[string]string,
