@@ -25,6 +25,12 @@ type Article struct {
 	IsFree uint8 `gorm:"type:tinyint(4);column:is_free;default:1;" json:"is_free" param:"is_free" form:"is_free"`
 	// 文章状态
 	Status uint8 `gorm:"type:tinyint(4);column:status;default:1;" json:"status" param:"status" form:"status"`
+	// 点赞数
+	LikesNum uint64 `gorm:"type:bigint(20);column:likes_num;" json:"likes_num" param:"likes_num"`
+	// 收藏数
+	StarsNum uint64 `gorm:"type:bigint(20);column:stars_num;" json:"stars_num" param:"stars_num"`
+	// 评论数
+	CommentsNum uint64 `gorm:"type:bigint(20);column:comments_num;" json:"comments_num" param:"comments_num"`
 	// 创建时间
 	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time"`
 	// 更新时间
@@ -32,11 +38,11 @@ type Article struct {
 	// 关联内容表（1:1）
 	ArticleContent ArticleContent `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"content"`
 	// 关联like表
-	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID" json:"likes"`
+	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID" json:"-"`
 	// 关联star表
-	Stars []Star `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"stars"`
+	Stars []Star `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"-"`
 	// 关联Comment表
-	Comments []Comment `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"comments"`
+	Comments []Comment `gorm:"ForeignKey:ArticleId;association_foreignkey:ID" json:"-"`
 }
 
 // 初始函数执行建表和添加外键

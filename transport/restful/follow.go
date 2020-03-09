@@ -40,7 +40,7 @@ func Follow(c *doris.Context) error {
 			"user_id = ? ":     follow.UserId,
 			"followed_id = ? ": follow.FollowedId,
 		}
-		dupli := service.FollowExist(andWhere)
+		dupli := service.Exist(andWhere)
 		if !dupli {
 			// 执行插入
 			err = service.AuthorFollow(follow)

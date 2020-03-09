@@ -225,7 +225,7 @@ func CommentLike(c *doris.Context) error {
 			"user_id = ? ":    like.UserId,
 			"comment_id = ? ": like.CommentId,
 		}
-		dupli := service.LikeExist(andWhere)
+		dupli := service.Exist(andWhere)
 		if !dupli {
 			// 执行插入
 			err = service.CommentLike(like)

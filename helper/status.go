@@ -37,6 +37,7 @@ const (
 	ArticleDupliErr   = 20030
 	ArticleIdEmptyErr = 20031
 	CommentDelErr     = 20032
+	ResetPwdErr       = 20033
 	LoginStatusOK     = 20200
 	SaveStatusOK      = 20201
 	DeleteStatusOK    = 20202
@@ -56,6 +57,7 @@ const (
 	UnFollowOk        = 20216
 	UserAddOk         = 20217
 	RefreshTokenOk    = 20218
+	ResetPwdOk        = 20219
 	SaveObjIsNil      = 20400
 	DeleteObjIsNil    = 20401
 	UpdateObjIsNil    = 20402
@@ -120,8 +122,10 @@ var statusText = map[int]string{
 	FollowOk:          "关注成功！",
 	UnFollowOk:        "取消关注成功！",
 	RefreshTokenOk:    "刷新token成功！",
+	ResetPwdOk:        "重置密码成功！",
 	LoginNotFoundErr:  "用户不存在！",
 	LoginFindUserErr:  "查询用户出错！",
+	ResetPwdErr:       "重置密码错误！",
 	LoginTokenErr:     "用户token签发失败！",
 	ParamBindErr:      "参数绑定错误！",
 	UserAddErr:        "用户添加失败！",

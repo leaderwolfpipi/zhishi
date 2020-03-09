@@ -28,7 +28,7 @@ type Comment struct {
 	// 更新时间
 	LastUpdateTime int `gorm:"type:int(11);column:last_update_time;default:0;" json:"last_update_time"`
 	// 关联like表
-	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID"`
+	Likes []Like `gorm:"ForeignKey:ObjectId;association_foreignkey:ID" json:"-"`
 }
 
 // 初始函数执行建表和添加外键

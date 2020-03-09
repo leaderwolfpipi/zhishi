@@ -43,8 +43,6 @@ func Article(c *doris.Context) error {
 
 	preloads := map[string]string{
 		"zs_article_content": "ArticleContent",
-		"zs_like":            "Likes",
-		"zs_star":            "Stars",
 	}
 
 	// 查询记录
@@ -269,8 +267,8 @@ func ArticleLike(c *doris.Context) error {
 			"article_id = ? ": like.ArticleId,
 		}
 
-		// fmt.Println(service.LikeExist(andWhere))
-		if !service.LikeExist(andWhere) {
+		// 重复检测
+		if !service.Exist(andWhere) {
 			// 执行插入
 			err = service.ArticleLike(like)
 			// 结果判断
@@ -350,7 +348,7 @@ func ArticleStar(c *doris.Context) error {
 			"user_id = ? ":    star.UserId,
 			"article_id = ? ": star.ArticleId,
 		}
-		dupli := service.StarExist(andWhere)
+		dupli := service.Exist(andWhere)
 		if !dupli {
 			// 执行插入
 			err = service.ArticleStar(star)

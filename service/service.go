@@ -14,7 +14,11 @@ type Service interface {
 	UserModify(user interface{}) error
 
 	// 根据pk查询
-	UserByPK(pk string, value uint64, preloads map[string]string, preLimit int) (interface{}, error)
+	UserByPK(
+		pk string,
+		value uint64,
+		preloads map[string]string,
+		preLimit int) (interface{}, error)
 
 	// 根据username查询
 	UserByUsername(username string) (interface{}, error)
@@ -64,17 +68,11 @@ type Service interface {
 	// 删除文章
 	ArticleDel(pk string, value uint64) error
 
-	// 点赞查重
-	LikeExist(andWhere map[string]interface{}) bool
-
 	// 点赞文章
 	ArticleLike(like interface{}) error
 
 	// 取消点赞
 	ArticleUnlike(andWhere map[string]interface{}) error
-
-	// 收藏查重
-	StarExist(andWhere map[string]interface{}) bool
 
 	// 收藏文章
 	ArticleStar(star interface{}) error
@@ -106,14 +104,14 @@ type Service interface {
 	// 取消点赞
 	CommentUnlike(userId uint64, commentId uint64) error
 
-	// 关注去重
-	FollowExist(andWhere map[string]interface{}) bool
-
 	// 关注作者
 	AuthorFollow(follow interface{}) error
 
 	// 取消关注
 	AuthorUnFollow(andWhere map[string]interface{}) error
+
+	// 存在判断
+	Exist(andWhere map[string]interface{}) bool
 }
 
 // 定义Service接口的实现结构
@@ -188,7 +186,8 @@ func (s *service) Articles(
 
 // 获取单篇文章
 func (s *service) ArticleByPK(
-	pk string, value uint64,
+	pk string,
+	value uint64,
 	preloads map[string]string,
 	preLimit int) (interface{}, error) {
 	return s.repo.FindByPK(nil, pk, value, preloads, preLimit)
@@ -232,7 +231,7 @@ func (s *service) ArticleDel(pk string, value uint64) error {
 }
 
 // 点赞查重
-func (s *service) LikeExist(andWhere map[string]interface{}) bool {
+func (s *service) Exist(andWhere map[string]interface{}) bool {
 	dupli, _ := s.repo.FindOne(andWhere, nil, nil, nil, 1)
 	if dupli != nil {
 		return true
@@ -248,15 +247,6 @@ func (s *service) ArticleLike(like interface{}) error {
 // 取消文章点赞
 func (s *service) ArticleUnlike(andWhere map[string]interface{}) error {
 	return s.repo.Delete(andWhere, nil)
-}
-
-// 收藏查重
-func (s *service) StarExist(andWhere map[string]interface{}) bool {
-	dupli, _ := s.repo.FindOne(andWhere, nil, nil, nil, 1)
-	if dupli != nil {
-		return true
-	}
-	return false
 }
 
 // 收藏文章
@@ -296,15 +286,6 @@ func (s *service) CommentUnlike(userId uint64, commentId uint64) error {
 		"comment_id = ? ": commentId,
 	}
 	return s.repo.Delete(andWhere, nil)
-}
-
-// 关注去重
-func (s *service) FollowExist(andWhere map[string]interface{}) bool {
-	dupli, _ := s.repo.FindOne(andWhere, nil, nil, nil, 1)
-	if dupli != nil {
-		return true
-	}
-	return false
 }
 
 // 关注作者

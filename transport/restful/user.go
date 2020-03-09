@@ -155,7 +155,6 @@ func Register(c *doris.Context) error {
 		c.IndentedJson(200, result)
 		c.Abort()
 		return nil
-
 	} else {
 		// 用户已存在
 		result.Code = helper.ExistUsernameErr
@@ -210,7 +209,68 @@ func RefreshToken(c *doris.Context) error {
 
 // 重置用户密码
 func ResetPWD(c *doris.Context) error {
+	// 错误提示
+	var err error
 
-	// @TODO...
+	// 获取参数
+	tmpUID := c.FormParam("user_id")
+	newPassword := c.FormParam("new_password")
+	password := c.FormParam("password")
+	UID, _ := strconv.Atoi(tmpUID)
+	userId := uint64(UID)
+
+	// 查询用户
+	// 获取用户信息
+	user := &entity.User{}
+	result := helper.JsonResult{
+		Code:    helper.ResetPwdOk,
+		Message: helper.StatusText(helper.ResetPwdOk)}
+
+	if userId == 0 || password == "" {
+		err = errors.New("user_id and password cannot be empty!")
+		result.Code = helper.ResetPwdErr
+		result.Message = helper.StatusText(helper.ResetPwdErr) + " [ origin err: " + err.Error() + " ]"
+		c.IndentedJson(200, result)
+		c.Abort()
+		return err
+	}
+
+	// 实例化repo对象
+	repo := mysql.NewRepo(user.GetUserFunc("findOne"), helper.Database)
+
+	// 传递repo到service层
+	service := service.NewService(repo)
+
+	// 主键查询
+	tmp, _ := service.UserByPK("user_id", userId, nil, 1)
+	if tmp != nil {
+		// 用户存在
+		uInfo := tmp.(*entity.User)
+		if uInfo.Password == helper.SHA256(password) {
+			// 更新密码
+			uInfo.Password = helper.SHA256(strings.Trim(newPassword, ""))
+			err = service.UserModify(uInfo)
+			if err != nil {
+				result.Code = helper.ResetPwdErr
+				result.Message = helper.StatusText(helper.ResetPwdErr) + err.Error()
+			}
+		} else {
+			// 密码错误
+			result.Code = helper.ResetPwdErr
+			result.Message = helper.StatusText(helper.ResetPwdErr) + " [ origin err: password wrong! ] "
+		}
+
+		// 返回结果
+		c.IndentedJson(200, result)
+		c.Abort()
+	} else {
+		// 用户不存在
+		result.Code = helper.ResetPwdErr
+		result.Message = helper.StatusText(helper.ResetPwdErr) + "[ origin err: user not exist! ]"
+		// 返回结果
+		c.IndentedJson(200, result)
+		c.Abort()
+	}
+
 	return nil
 }
