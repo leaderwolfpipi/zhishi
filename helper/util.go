@@ -3,6 +3,11 @@ package helper
 // 提供公共的函数定义
 
 import (
+	"bytes"
+	"math/rand"
+	"runtime"
+	"strconv"
+
 	"github.com/bwmarrin/snowflake"
 	"github.com/spf13/viper"
 )
@@ -56,4 +61,19 @@ func GetConfig(config interface{}) interface{} {
 // 根据键获取配置值
 func GetConfigByKey(key string) interface{} {
 	return viper.Get(key)
+}
+
+// 生成随机数字
+func RandInt(min int, max int) int {
+	return min + rand.Intn(max-min)
+}
+
+// 获取当前goroutine的id
+func GetGID() uint64 {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine"))
+	b = b[:bytes.IndexByte(b, ' ')]
+	n, _ := strconv.ParseUint(string(b), 10, 64)
+	return n
 }

@@ -120,6 +120,7 @@ func Register(c *doris.Context) error {
 	// 获取用户信息
 	// 参数绑定
 	err := c.Form(user)
+	// fmt.Println("user = ", user)
 	if err != nil {
 		result.Code = helper.ParamBindErr
 		result.Message = helper.StatusText(helper.ParamBindErr)

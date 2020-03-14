@@ -106,8 +106,8 @@ func ArticleAdd(c *doris.Context) error {
 	// 设置预加载表
 	preloads := map[string]string{
 		"zs_article_content": "ArticleContent",
-		"zs_like":            "Likes",
-		"zs_star":            "Stars",
+		// "zs_like":            "Likes",
+		// "zs_star":            "Stars",
 	}
 
 	// 查询记录

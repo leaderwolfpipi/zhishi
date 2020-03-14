@@ -5,10 +5,14 @@ go 1.12
 require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/garyburd/redigo v1.6.0
 	github.com/jinzhu/gorm v1.9.12
-	github.com/leaderwolfpipi/doris v1.1.1
-	github.com/leaderwolfpipi/logger v1.3.0
-	github.com/shopspring/decimal v0.0.0-20200226005030-a08b92da27ed
+	github.com/json-iterator/go v1.1.9 // indirect
+	github.com/leaderwolfpipi/binding v1.0.0 // indirect
+	github.com/leaderwolfpipi/doris v1.2.0
+	github.com/leaderwolfpipi/logger v1.4.0
+	github.com/microcosm-cc/bluemonday v1.0.2
+	github.com/russross/blackfriday/v2 v2.0.1
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/spf13/viper v1.6.2
-	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
 )

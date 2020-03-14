@@ -29,7 +29,7 @@ func init() {
 	// helper.Database.AutoMigrate(&Star{})
 
 	// 设置外键约束
-	helper.Database.Model(&Star{}).AddForeignKey("article_id", "zs_article(article_id)", "CASCADE", "CASCADE")
+	// helper.Database.Model(&Star{}).AddForeignKey("article_id", "zs_article(article_id)", "CASCADE", "CASCADE")
 }
 
 // 设置表名

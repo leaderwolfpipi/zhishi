@@ -1,6 +1,7 @@
 package entity
 
 import (
+	// "fmt"
 	"strconv"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 // 用户实体表
 type User struct {
 	// 主键
-	ID uint64 `gorm:"type:bigint(20);primary_key;column:user_id" json:"user_id" validate:"required"`
+	ID uint64 `gorm:"type:bigint(20);primary_key;column:user_id" json:"user_id" param:"-" validate:"required"`
 	// 用户名
 	// Username string `param:"username"`
 	Username string `gorm:"type:varchar(30);unique_index;not null;column:username" json:"username" param:"username" form:"username" validate:"required"`
@@ -32,7 +33,7 @@ type User struct {
 	// 是否作者
 	IsAuthor uint8 `gorm:"type:tinyint(4);column:is_author;default:1;" json:"is_author" param:"-" form:"is_author"`
 	// 用户状态
-	Status uint8 `gorm:"type:tinyint(4);column:status;default:1;" json:"status"`
+	Status uint8 `gorm:"type:tinyint(4);column:status;default:1;" json:"status" param:"-"`
 	// 创建时间
 	CreateTime int `gorm:"type:int(11);column:create_time;default:0;" json:"create_time" param:"-" form:"create_time"`
 	// 更新时间
@@ -65,12 +66,15 @@ func (user *User) TableName() string {
 // 插入前生成主键并自动设置插入时间
 func (user *User) BeforeCreate(scope *gorm.Scope) error {
 	nodeId, _ := strconv.Atoi(helper.GetNodesConfig().Server[0].NodeId)
+	// nodeId + 随机数字
+	// nodeId += helper.RandInt(60, 99)
 	id, err := helper.GenerateIdBySnowflake(int64(nodeId))
 	if err != nil {
 		panic("生成ID时发生异常: %s" + err.Error())
 	}
 	scope.Set("ID", &id)
-	user.ID = id
+	// 解决主键冲突问题
+	user.ID = id + uint64(time.Now().UnixNano()) + uint64(helper.RandInt(50, 99))
 
 	// 设置create_time（单位秒）
 	scope.SetColumn("CreateTime", time.Now().Unix())

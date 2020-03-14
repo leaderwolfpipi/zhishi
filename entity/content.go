@@ -1,7 +1,12 @@
 package entity
 
 import (
+	"bytes"
+
+	"github.com/jinzhu/gorm"
 	"github.com/leaderwolfpipi/zhishi/helper"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 )
 
 // 文章内容表
@@ -32,12 +37,39 @@ func (articleContent *ArticleContent) TableName() string {
 
 // 设置创建钩子
 // 插入前生成主键并自动设置插入时间
-//func (article *ArticleContent) BeforeCreate(scope *gorm.Scope) error {
-//	// 设置create_time（单位秒）
-//	scope.SetColumn("CreateTime", time.Now().Unix())
+func (ac *ArticleContent) BeforeCreate(scope *gorm.Scope) error {
+	// 解析markdown文本
+	data := []byte(ac.Content)
+	data = bytes.Replace(data, []byte("\r"), nil, -1)
+	unsafe := blackfriday.Run(
+		data,
+		blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.HardLineBreak),
+	)
 
-//	return nil
-//}
+	// 安全过滤
+	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	scope.SetColumn("Content", string(html))
+
+	return nil
+}
+
+// 设置更新钩子
+// 更新操作时自动更新last_update_time（单位秒）
+func (ac *ArticleContent) BeforeUpdate(scope *gorm.Scope) error {
+	// 解析markdown文本
+	data := []byte(ac.Content)
+	data = bytes.Replace(data, []byte("\r"), nil, -1)
+	unsafe := blackfriday.Run(
+		data,
+		blackfriday.WithExtensions(blackfriday.CommonExtensions|blackfriday.HardLineBreak),
+	)
+
+	// 安全过滤
+	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	scope.SetColumn("Content", string(html))
+
+	return nil
+}
 
 // 获取实体处理函数
 func (ac *ArticleContent) GetContentFunc(action string) helper.EntityFunc {
